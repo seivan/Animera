@@ -2,8 +2,11 @@
 import Foundation
 
 typealias TimingFunctionHandler = (Double) -> (Double)
-struct TimingFunctions {
 
+
+struct TimingFunctions {
+  
+  
   static var linearInterpolation:TimingFunctionHandler {
     return { t in
          return t

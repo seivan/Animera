@@ -2,51 +2,105 @@
 //  AppDelegate.swift
 //  TestsAndSample
 //
-//  Created by Seivan Heidari on 15/07/14.
+//  Created by Seivan Heidari on 20/07/14.
 //  Copyright (c) 2014 Seivan Heidari. All rights reserved.
 //
 
+import UIKit
 
-import Cocoa
-import SpriteKit
+extension TimingFunctions {
+  
+  static var randomTimingFunction:TimingFunctionHandler  {
+    get {
+      let randomValue = Int(arc4random_uniform(UInt32(TimingFunctions.allTimingFunctions.count)))
+      return TimingFunctions.allTimingFunctions[randomValue]
+  }
+  }
+  
+  
+  static let allTimingFunctions:[TimingFunctionHandler] =
+  [TimingFunctions.linearInterpolation,
+    
+    TimingFunctions.quadraticEaseIn,
+    TimingFunctions.quadraticEaseOut,
+    TimingFunctions.quadraticEaseInOut,
+    
+    TimingFunctions.cubicEaseIn,
+    TimingFunctions.cubicEaseOut,
+    TimingFunctions.cubicEaseInOut,
+    
+    TimingFunctions.quarticEaseIn,
+    TimingFunctions.quarticEaseOut,
+    TimingFunctions.quarticEaseInOut,
+    
+    TimingFunctions.quinticEaseIn,
+    TimingFunctions.quinticEaseOut,
+    TimingFunctions.quinticEaseInOut,
+    
+    TimingFunctions.sineEaseIn,
+    TimingFunctions.sineEaseOut,
+    TimingFunctions.sineEaseInOut,
+    
+    TimingFunctions.circularEaseIn,
+    TimingFunctions.circularEaseOut,
+    TimingFunctions.circularEaseInOut,
+    
+    TimingFunctions.exponentialEaseIn,
+    TimingFunctions.exponentialEaseOut,
+    TimingFunctions.exponentialEaseInOut,
+    
+    TimingFunctions.elasticEaseIn,
+    TimingFunctions.elasticEaseOut,
+    TimingFunctions.elasticEaseInOut,
+    
+    TimingFunctions.backEaseIn,
+    TimingFunctions.backEaseOut,
+    TimingFunctions.backEaseInOut,
+    
+    TimingFunctions.bounceEaseIn,
+    TimingFunctions.bounceEaseOut,
+    TimingFunctions.bounceEaseInOut,
+    
+    TimingFunctions.extremeBackEaseIn,
+    TimingFunctions.extremeBackEaseOut,
+    TimingFunctions.extremeBackEaseInOut,
+    
+    TimingFunctions.smoothStep
+  ]
+}
+@UIApplicationMain
+class AppDelegate: UIResponder, UIApplicationDelegate {
+                            
+  var window: UIWindow?
 
-extension SKNode {
-    class func unarchiveFromFile(file : NSString) -> SKNode? {
-        
-        let path = NSBundle.mainBundle().pathForResource(file, ofType: "sks")
-        
-        var sceneData = NSData.dataWithContentsOfFile(path, options: .DataReadingMappedIfSafe, error: nil)
-        var archiver = NSKeyedUnarchiver(forReadingWithData: sceneData)
-        
-        archiver.setClass(self.classForKeyedUnarchiver(), forClassName: "SKScene")
-        let scene = archiver.decodeObjectForKey(NSKeyedArchiveRootObjectKey) as GameScene
-        archiver.finishDecoding()
-        return scene
-    }
+
+  func application(application: UIApplication!, didFinishLaunchingWithOptions launchOptions: NSDictionary!) -> Bool {
+    // Override point for customization after application launch.
+    return true
+  }
+
+  func applicationWillResignActive(application: UIApplication!) {
+    // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
+    // Use this method to pause ongoing tasks, disable timers, and throttle down OpenGL ES frame rates. Games should use this method to pause the game.
+  }
+
+  func applicationDidEnterBackground(application: UIApplication!) {
+    // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
+    // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
+  }
+
+  func applicationWillEnterForeground(application: UIApplication!) {
+    // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
+  }
+
+  func applicationDidBecomeActive(application: UIApplication!) {
+    // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+  }
+
+  func applicationWillTerminate(application: UIApplication!) {
+    // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+  }
+
+
 }
 
-class AppDelegate: NSObject, NSApplicationDelegate {
-    
-    @IBOutlet var window: NSWindow
-    @IBOutlet var skView: SKView
-    
-    func applicationDidFinishLaunching(aNotification: NSNotification?) {
-        /* Pick a size for the scene */
-        if let scene = GameScene.unarchiveFromFile("GameScene") as? GameScene {
-            /* Set the scale mode to scale to fit the window */
-            scene.scaleMode = .AspectFill
-            
-            self.skView!.presentScene(scene)
-            
-            /* Sprite Kit applies additional optimizations to improve rendering performance */
-            self.skView!.ignoresSiblingOrder = true
-            
-            self.skView!.showsFPS = true
-            self.skView!.showsNodeCount = true
-        }
-    }
-    
-    func applicationShouldTerminateAfterLastWindowClosed(sender: NSApplication) -> Bool {
-        return true;
-    }
-}
