@@ -9,16 +9,30 @@
 import UIKit
 
 import QuartzCore
-typealias DisplayLinkProgressHandler = (progress:Double, reversedProgress:Double, isFinished:Bool) -> Void
+typealias DisplayLinkProgressHandler = (progress:Double, reversedProgress:Double, isFinished:Bool, action:DisplayLinkTween) -> Void
+typealias DisplayLinkTween = (identifier:String, fromValue:Double, toValue:Double) -> Double
 
 class __AnimeraInternalWrapper : NSObject {
-  let handler:DisplayLinkProgressHandler
+  let handler:DisplayLinkProgressHandler?
   let duration:NSTimeInterval = 0
-  let startTime:NSTimeInterval
+  let startTime:NSTimeInterval = 0
+  var originalValues = [String:Double]()
+  let action:DisplayLinkTween?
+  var progress:Double = 0.0
   init(duration:NSTimeInterval, handler:DisplayLinkProgressHandler) {
+    super.init()
     self.duration = duration
     self.handler = handler
     self.startTime = CACurrentMediaTime()
+    self.action = { identifier, fromValue, toValue in
+      if let existingValue:Double = self.originalValues[identifier] {
+        return (toValue * self.progress) + (existingValue * (1.0-self.progress))
+      }
+      else {
+        self.originalValues[identifier] = fromValue
+        return (toValue * self.progress) + (fromValue * (1.0-self.progress))
+      }
+    }
   }
   
   func update(displayLink:CADisplayLink) {
@@ -26,14 +40,16 @@ class __AnimeraInternalWrapper : NSObject {
     let currentDuration = displayLink.timestamp - self.startTime
     println(currentDuration)
     if(currentDuration >= self.duration) {
-      self.handler(progress: 1, reversedProgress: 0, isFinished:true)
+      self.progress = 1.0
+      self.handler!(progress: self.progress, reversedProgress: 0, isFinished:true, action:self.action!)
       displayLink.invalidate()
       __AnimeraInternalManager.map.removeValueForKey(displayLink)
     }
     else {
       let percentage = currentDuration/self.duration
+      self.progress = percentage
       let reversePercentage = (1.0-percentage)
-      self.handler(progress: percentage, reversedProgress: reversePercentage, isFinished:false)
+      self.handler!(progress: percentage, reversedProgress: reversePercentage, isFinished:false, action:self.action!)
       
     }
     
@@ -109,13 +125,13 @@ class ViewController: UIViewController {
   func update() {
     
     
-    Animera.runWithDuration(self.duration) { progress, reversedProgress, isFinished in
+    Animera.runWithDuration(self.duration) { progress, reversedProgress, isFinished, action in
       let timedPercentage = self.timingFunctionHandler(progress)
 //      self.box.center.x = (self.newCenter!.x * timedPercentage) + (self.box.center.x * (1.0-timedPercentage))
 //      self.box.center.y =  (self.newCenter!.y * timedPercentage) + (self.box.center.y * (1.0-timedPercentage))
 
-      self.box.center.x = (self.newCenter!.x * timedPercentage) + (self.box.center.x * (1.0-timedPercentage))
-      self.box.center.y =  (self.newCenter!.y * timedPercentage) + (self.box.center.y * (1.0-timedPercentage))
+      self.box.center.x = action(identifier: "centerX", fromValue: self.box.center.x, toValue: self.newCenter!.x)
+      self.box.center.y =  action(identifier: "centerY", fromValue: self.box.center.y, toValue: self.newCenter!.y)
 
 //      self.box.bounds.size.width = (self.newSize!.width * timedPercentage) + (self.previousSize!.width * (1.0-timedPercentage))
 //      self.box.bounds.size.height =  (self.newSize!.height * timedPercentage) + (self.previousSize!.height * (1.0-timedPercentage))
