@@ -16,6 +16,8 @@
 		22B809EF197C4EB5002DF9FB /* DisplayLinkClosures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B809ED197C4EB5002DF9FB /* DisplayLinkClosures.swift */; };
 		22B809F2197CAD5C002DF9FB /* TimingFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B809F1197CAD5C002DF9FB /* TimingFunctions.swift */; };
 		22B809F6197CB235002DF9FB /* NumeralExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B809F5197CB235002DF9FB /* NumeralExtension.swift */; };
+		22BE61EF197EDA6600507AC4 /* ScalarArithmetic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BE61EE197EDA6600507AC4 /* ScalarArithmetic.swift */; };
+		22BE61F0197EDA6600507AC4 /* ScalarArithmetic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BE61EE197EDA6600507AC4 /* ScalarArithmetic.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,6 +43,7 @@
 		22B809ED197C4EB5002DF9FB /* DisplayLinkClosures.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DisplayLinkClosures.swift; sourceTree = "<group>"; };
 		22B809F1197CAD5C002DF9FB /* TimingFunctions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimingFunctions.swift; sourceTree = "<group>"; };
 		22B809F5197CB235002DF9FB /* NumeralExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NumeralExtension.swift; sourceTree = "<group>"; };
+		22BE61EE197EDA6600507AC4 /* ScalarArithmetic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScalarArithmetic.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +67,7 @@
 		22B809C1197C4E88002DF9FB = {
 			isa = PBXGroup;
 			children = (
+				22BE61ED197EDA6600507AC4 /* ScalarArithmetic */,
 				22B809F4197CB235002DF9FB /* NumeralExtension */,
 				22B809F0197CAD5C002DF9FB /* TimingFunctions */,
 				22B809EC197C4E95002DF9FB /* DisplayLinkClosures */,
@@ -142,6 +146,14 @@
 				22B809F5197CB235002DF9FB /* NumeralExtension.swift */,
 			);
 			path = NumeralExtension;
+			sourceTree = "<group>";
+		};
+		22BE61ED197EDA6600507AC4 /* ScalarArithmetic */ = {
+			isa = PBXGroup;
+			children = (
+				22BE61EE197EDA6600507AC4 /* ScalarArithmetic.swift */,
+			);
+			path = ScalarArithmetic;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -244,6 +256,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				22B809D2197C4E88002DF9FB /* ViewController.swift in Sources */,
+				22BE61EF197EDA6600507AC4 /* ScalarArithmetic.swift in Sources */,
 				22B809F2197CAD5C002DF9FB /* TimingFunctions.swift in Sources */,
 				22B809F6197CB235002DF9FB /* NumeralExtension.swift in Sources */,
 				22B809EE197C4EB5002DF9FB /* DisplayLinkClosures.swift in Sources */,
@@ -256,6 +269,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				22B809EF197C4EB5002DF9FB /* DisplayLinkClosures.swift in Sources */,
+				22BE61F0197EDA6600507AC4 /* ScalarArithmetic.swift in Sources */,
 				22B809E3197C4E89002DF9FB /* TestsAndSampleTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -436,6 +450,7 @@
 				22B809E8197C4E89002DF9FB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		22B809E9197C4E89002DF9FB /* Build configuration list for PBXNativeTarget "TestsAndSampleTests" */ = {
 			isa = XCConfigurationList;
@@ -444,6 +459,7 @@
 				22B809EB197C4E89002DF9FB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
