@@ -8,94 +8,13 @@
 
 import UIKit
 
-import QuartzCore
-typealias DisplayLinkProgressHandler = (progress:Double, reversedProgress:Double, isFinished:Bool, action:DisplayLinkTween) -> Void
-typealias DisplayLinkTween = (identifier:String, fromValue:Double, toValue:Double) -> Double
 
-
-
-
-class Animera {
-  class __AnimeraInternalWrapper : NSObject {
-    let handler:DisplayLinkProgressHandler?
-    let completionHandler:DisplayLinkProgressHandler?
-    let duration:NSTimeInterval = 0
-    let startTime:NSTimeInterval = 0
-    var originalValues = [String:Double]()
-    let action:DisplayLinkTween?
-    var progress:Double = 0.0
-    
-    init(duration:NSTimeInterval, handler:DisplayLinkProgressHandler) {
-      super.init()
-      self.duration = duration
-      self.handler = handler
-      self.startTime = CACurrentMediaTime()
-      self.action = {[weak self] identifier, fromValue, toValue in
-        if let weakSelf = self  {
-          if let existingValue:Double = weakSelf.originalValues[identifier] {
-            return (toValue * weakSelf.progress) + (existingValue * (1.0-weakSelf.progress))
-          }
-          else {
-            weakSelf.originalValues[identifier] = fromValue
-            return (toValue * weakSelf.progress) + (fromValue * (1.0-weakSelf.progress))
-            }
-          }
-        else {
-          return 0
-        }
-      }
-    }
-    
-    func update(displayLink:CADisplayLink) {
-      let currentDuration = displayLink.timestamp - self.startTime
-//      println(currentDuration)
-      if(currentDuration >= self.duration) {
-        self.progress = 1.0
-        self.handler!(progress: self.progress, reversedProgress: 0, isFinished:true, action:self.action!)
-        displayLink.invalidate()
-      }
-      else {
-        let percentage = currentDuration/self.duration
-        self.progress = percentage
-        let reversePercentage = (1.0-percentage)
-        self.handler!(progress: percentage, reversedProgress: reversePercentage, isFinished:false, action:self.action!)
-        
-      }
-      
-    }
-    deinit {
-      println("DEALLOACTED")
-    }
-  }
-
-  internal var  wrapper:__AnimeraInternalWrapper?
-  var displayLink:CADisplayLink?
-  init() {
-
-
-    
-  }
-
-
-  func runWithDuration(duration:NSTimeInterval, _ handler:DisplayLinkProgressHandler) -> Animera {
-    if let d = self.displayLink {
-      d.invalidate()
-    }
-    self.wrapper = __AnimeraInternalWrapper(duration: duration, handler:handler)
-    self.displayLink = CADisplayLink(target: self.wrapper, selector: "update:")
-    displayLink!.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
-    return self
-    
-  }
-  
-  
-}
 
 class ViewController: UIViewController {
   @IBOutlet var box:UIView!
   var newCenter:CGPoint?
   var previousCenter:CGPoint?
-  var duration = 1.5
+  var duration = 0.5
   var previousCornerRadius:Double?
   var newCornerRadius:Double?
   var previousSize:CGSize?
@@ -147,17 +66,19 @@ class ViewController: UIViewController {
   let anim = Animera()
   func update() {
     
-    
-    self.anim.runWithDuration(self.duration) { progress, reversedProgress, isFinished, action in
+    self.previousCenter = self.box.center
+
+    self.anim.runAnimationWithDuration(self.duration) { progress, reversedProgress, isFinished, action in
       let timedPercentage = self.timingFunctionHandler(progress)
-//      self.box.center.x = (self.newCenter!.x * timedPercentage) + (self.box.center.x * (1.0-timedPercentage))
-//      self.box.center.y =  (self.newCenter!.y * timedPercentage) + (self.box.center.y * (1.0-timedPercentage))
+      self.box.center.x = (self.newCenter!.x * timedPercentage) + (self.previousCenter!.x * (1.0-timedPercentage))
+      self.box.center.y =  (self.newCenter!.y * timedPercentage) + (self.previousCenter!.y * (1.0-timedPercentage))
 
-      self.box.center.x = action(identifier: "centerX", fromValue: self.box.center.x, toValue: self.newCenter!.x)
-      self.box.center.y =  action(identifier: "centerY", fromValue: self.box.center.y, toValue: self.newCenter!.y)
+//      self.box.center.x = action(identifier: "centerX", fromValue: self.box.center.x, toValue: self.newCenter!.x)
+//      self.box.center.y =  action(identifier: "centerY", fromValue: self.box.center.y, toValue: self.newCenter!.y)
 
-      self.box.bounds.size.width = (self.newSize!.width * timedPercentage) + (self.previousSize!.width * (1.0-timedPercentage))
-      self.box.bounds.size.height =  (self.newSize!.height * timedPercentage) + (self.previousSize!.height * (1.0-timedPercentage))
+      let timedSizePercentage = TimingFunctions.elasticEaseInOut(progress)
+      self.box.bounds.size.width = (self.newSize!.width * timedSizePercentage) + (self.previousSize!.width * (1.0-timedSizePercentage))
+      self.box.bounds.size.height =  (self.newSize!.height * timedSizePercentage) + (self.previousSize!.height * (1.0-timedSizePercentage))
       
       self.box.layer.cornerRadius = (self.newCornerRadius! * timedPercentage) + (self.previousCornerRadius! * (1.0-timedPercentage))
       if(isFinished == true) {
