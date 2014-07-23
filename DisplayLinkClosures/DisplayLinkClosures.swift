@@ -57,7 +57,7 @@ public class AnimeraEvent {
 public class Animera {
   @objc private class InternalAnimeraWrapper  {
 
-    var event = AnimeraEvent()
+    let event = AnimeraEvent()
     lazy var displayLink:CADisplayLink = CADisplayLink(target: self, selector: "update:")
     var animationHandler:AnimeraHandler
     var completionHandler:AnimeraCompletionHandler?

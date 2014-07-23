@@ -45,7 +45,7 @@ class ViewController: UIViewController {
       self.update()
       
     }
-    let tap = UITapGestureRecognizer(target: self, action: "didTap:")
+    let tap = UIPanGestureRecognizer(target: self, action: "didTap:")
     self.view.addGestureRecognizer(tap)
     
   }
@@ -57,10 +57,10 @@ class ViewController: UIViewController {
   
   
   func didTap(tap:UITapGestureRecognizer) {
-    if(tap.state == .Ended) {
+//    if(tap.state == .Ended) {
       self.newCenter = tap.locationInView(self.view)
       self.update()
-    }
+//    }
   }
   
   let anim = Animera()
