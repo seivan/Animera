@@ -8,24 +8,24 @@
 
 import Foundation
 import QuartzCore
-typealias DisplayLinkProgressHandler = (progress:Double, reversedProgress:Double, isFinished:Bool, action:DisplayLinkTween?) -> Void
-typealias DisplayLinkTween = (identifier:String, fromValue:Double, toValue:Double) -> Double
 
-typealias AnimeraHandler = (event:AnimeraEvent) -> Void
+public typealias AnimeraHandler = (event:AnimeraEvent) -> Void
+public typealias AnimeraCompletionHandler = (isCancelled:Bool) -> Void
 
-public struct AnimeraEvent {
+public class AnimeraEvent {
   private(set) var progress = 0.0
-  var reversedProgress:Double { get { 1.0-self.progress } }
+  var reversedProgress:Double  { return 1.0-self.progress }
   private(set) var duration:NSTimeInterval = 0
   private(set) var timeElapsed:NSTimeInterval = 0
-  var timeLeft:NSTimeInterval { get { self.duration - self.timeElapsed } }
+  var timeLeft:NSTimeInterval  { return self.duration - self.timeElapsed }
 
   private      var originalValues = [String:Double]()
   ////  weak var animera:Animera
   private init() {
     //    self.d
   }
-  mutating func tween(identifier:String, fromValue:Double, toValue:Double) -> Double {
+  
+  func tween(identifier:String, fromValue:Double, toValue:Double) -> Double {
     if let existingValue:Double = self.originalValues[identifier] {
       return (toValue * self.progress) + (existingValue * self.reversedProgress)
     }
@@ -35,77 +35,86 @@ public struct AnimeraEvent {
     }
   }
   
+  func tween(identifier:String, fromValue:CGPoint, toValue:CGPoint) -> CGPoint {
+    let x = self.tween(identifier+"_X", fromValue: fromValue.x, toValue: toValue.x)
+    let y = self.tween(identifier+"_Y", fromValue: fromValue.y, toValue: toValue.y)
+    return CGPoint(x: x, y: y)
+    
+  }
+
+  func tween(identifier:String, fromValue:CGSize, toValue:CGSize) -> CGSize {
+    let width = self.tween(identifier+"_X", fromValue: fromValue.width, toValue: toValue.width)
+    let height = self.tween(identifier+"_Y", fromValue: fromValue.width, toValue: toValue.height)
+    return CGSize(width: width, height: height)
+    
+  }
+
+  
   
 }
 
 
 public class Animera {
   @objc private class InternalAnimeraWrapper  {
+
     var event = AnimeraEvent()
-    var displayLink:CADisplayLink
+    lazy var displayLink:CADisplayLink = CADisplayLink(target: self, selector: "update:")
+    var animationHandler:AnimeraHandler
+    var completionHandler:AnimeraCompletionHandler?
+    var shouldAnimate:Bool { return self.event.timeElapsed <= self.event.duration || self.event.duration == -1.0 }
     
-    let handlerX:AnimeraHandler
-    let handler:DisplayLinkProgressHandler?
-    let completionHandler:DisplayLinkProgressHandler?
-    let action:DisplayLinkTween?
-
 
 
     
     
-    init(duration:NSTimeInterval, handler:DisplayLinkProgressHandler) {
-
-//      self.displayLink = CADisplayLink(target: self, selector: "update:")
-      self.event.duration = duration
-      self.handler = handler
-      
-    }
 
     init(duration:NSTimeInterval, handler:AnimeraHandler) {
-    
       self.event.duration = duration
-      self.handlerX = handler
+      self.animationHandler = handler
       
     }
 
     @objc func update(displayLink:CADisplayLink) {
       self.event.timeElapsed += displayLink.duration
-      println(self.event.timeElapsed)
-      if(self.event.timeElapsed >= self.event.duration && self.event.duration != -1.0) {
-        self.event.progress = 1.0
-        self.handler!(progress: self.event.progress, reversedProgress: 0, isFinished:true, action:nil)
-        displayLink.invalidate()
-        
-      }
-      else {
+      if(self.shouldAnimate == true) {
         let percentage = self.event.timeElapsed/self.event.duration
-        self.progress = percentage
-        let reversePercentage = (1.0-percentage)
-        self.handler!(progress: percentage, reversedProgress: reversePercentage, isFinished:false, action:nil)
-        
+        self.event.progress = percentage
+        self.animationHandler(event: self.event)
       }
+      else { self.stop() }
     }
     
-    func cancel() {
-
+    func stop(isCancelled:Bool = true) {
+      self.displayLink.invalidate()
+      self.displayLink.paused = true
+      if let completion = self.completionHandler {
+        completion(isCancelled: true)
+        self.completionHandler = nil
+      }
     }
     
     func pause() {
-      self.displayLink.paused = true
+//      self.displayLink?.paused = true
+    }
+    
+    func resume() {
+      self.displayLink.paused = false
+      self.displayLink.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
     }
     
 
   }
   
   private var  wrapper:InternalAnimeraWrapper?
-  var displayLink:CADisplayLink?
   
   init(){
-
+    
   }
   
   func cancel() {
-    //self.wrapper?.cancel();
+    if let w = self.wrapper {
+      w.stop(isCancelled: true)
+    }
   }
   func pause() {
     
@@ -115,19 +124,23 @@ public class Animera {
     
   }
   
+  
   func runAnimationWithDuration(duration:NSTimeInterval, _ handler:AnimeraHandler) -> Animera {
+    self.cancel()
+    self.wrapper = InternalAnimeraWrapper(duration: duration, handler:handler)
+    self.wrapper?.resume()
     return self
   }
   
-  func runAnimationWithDuration(duration:NSTimeInterval, _ handler:DisplayLinkProgressHandler) -> Animera {
-    
-    self.displayLink?.invalidate()
-    self.wrapper = InternalAnimeraWrapper(duration: duration, handler:handler)
-    self.displayLink = CADisplayLink(target: self.wrapper, selector: "update:")
-    displayLink!.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
-    return self
-    
-  }
+//  func runAnimationWithDuration(duration:NSTimeInterval, _ handler:DisplayLinkProgressHandler) -> Animera {
+//    
+////    self.displayLink?.invalidate()
+////    self.wrapper = InternalAnimeraWrapper(duration: duration, handler:handler)
+////    self.displayLink = CADisplayLink(target: self.wrapper, selector: "update:")
+////    displayLink!.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
+//    return self
+//    
+//  }
   
   
 }
