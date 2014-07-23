@@ -39,14 +39,10 @@ class ViewController: UIViewController {
     
     
     
-    let delay = 2 * Double(NSEC_PER_SEC)
-    let time = dispatch_time(DISPATCH_TIME_NOW, Int64(delay))
-    dispatch_after(time, dispatch_get_main_queue()) {
-      self.update()
-      
-    }
-    let tap = UIPanGestureRecognizer(target: self, action: "didTap:")
+    let pan = UIPanGestureRecognizer(target: self, action: "didTap:")
+    let tap = UITapGestureRecognizer(target: self, action: "didTap:")
     self.view.addGestureRecognizer(tap)
+    self.view.addGestureRecognizer(pan)
     
   }
   
@@ -56,102 +52,134 @@ class ViewController: UIViewController {
   }
   
   
-  func didTap(tap:UITapGestureRecognizer) {
+  func didTap(tap:UIPanGestureRecognizer) {
 //    if(tap.state == .Ended) {
       self.newCenter = tap.locationInView(self.view)
-      self.update()
+//      let velocityInPoints = tap.velocityInView(self.view)
+//      let velocity = CGVector(velocityInPoints.x, velocityInPoints.y)
+      self.update(CGPointZero)
 //    }
   }
   
-  let anim = Animera()
-  func update() {
+  let animator = Animera()
+  func update(velocity:CGPoint) {
     
     self.previousCenter = self.box.center
     self.newCornerRadius = 20.sh_randomFromZero
     let random = Double.sh_random(min: 25, max: 100)
     self.newSize = CGSize(width: random, height: random)
 
-    self.anim.runAnimationWithDuration(0.5) { event in
+    self.animator.runAnimationWithDuration(5) { event in
       self.box.center = event.tween("box", fromValue: self.box.center, toValue: self.newCenter!)
       self.box.layer.cornerRadius = event.tween("boxCornerStuff", fromValue: self.box.layer.cornerRadius, toValue: self.newCornerRadius!)
       self.box.frame.size = event.tween("LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
     }
     
     
+    let delay = 1 * Double(NSEC_PER_SEC)
+    let time = dispatch_time(DISPATCH_TIME_NOW, Int64(delay))
+    dispatch_after(time, dispatch_get_main_queue()) {
+      self.animator.pause()
+      let delay = 1 * Double(NSEC_PER_SEC)
+      let time = dispatch_time(DISPATCH_TIME_NOW, Int64(delay))
+      dispatch_after(time, dispatch_get_main_queue()) {
+        self.animator.resume()
+        
+        let delay = 1 * Double(NSEC_PER_SEC)
+        let time = dispatch_time(DISPATCH_TIME_NOW, Int64(delay))
+        dispatch_after(time, dispatch_get_main_queue()) {
+          self.animator.cancel()
+          
+        }
+
+        
+      }
+
+      
+    }
     
     
+    self.animator.onCompletion() { isCancelled in
+      println(isCancelled)
+    }
+
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-//    self.anim.runAnimationWithDuration(self.duration) { progress, reversedProgress, isFinished, action in
-//      let timedPercentage = self.timingFunctionHandler(progress)
-//      self.box.center.x = (self.newCenter!.x * timedPercentage) + (self.previousCenter!.x * (1.0-timedPercentage))
-//      self.box.center.y =  (self.newCenter!.y * timedPercentage) + (self.previousCenter!.y * (1.0-timedPercentage))
-//
-////      self.box.center.x = action(identifier: "centerX", fromValue: self.box.center.x, toValue: self.newCenter!.x)
-////      self.box.center.y =  action(identifier: "centerY", fromValue: self.box.center.y, toValue: self.newCenter!.y)
-//
-//      let timedSizePercentage = TimingFunctions.elasticEaseInOut(progress)
-//      self.box.bounds.size.width = (self.newSize!.width * timedSizePercentage) + (self.previousSize!.width * (1.0-timedSizePercentage))
-//      self.box.bounds.size.height =  (self.newSize!.height * timedSizePercentage) + (self.previousSize!.height * (1.0-timedSizePercentage))
-//      
-//      self.box.layer.cornerRadius = (self.newCornerRadius! * timedPercentage) + (self.previousCornerRadius! * (1.0-timedPercentage))
-//      if(isFinished == true) {
-//        self.timingFunctionHandler = TimingFunctions.randomTimingFunction
-//        self.previousCornerRadius = self.newCornerRadius
-//        self.previousSize = self.newSize
-//        self.newCornerRadius = 20.sh_randomFromZero
-////        self.newCenter = CGPoint(x: 320.sh_randomFromZero, y: 480.sh_randomFromZero)
-//        self.previousCenter = self.box.center
-//        let random = Double.sh_random(min: 25, max: 100)
-//        self.newSize = CGSize(width: random, height: random)
-////        self.update()
-//        
-//      }
-    
-//    }
+
   }
   
-}
+    
+//    self.animatorTransform.runAnimationWithDuration(0.5) { event in
+//      let frictionConstant = 20;
+//      let  springConstant = 300;
+//      let time = event.tick
+//      
+//      // friction force = velocity * friction constant
+//      
+//      let frictionForce = CGPointMultiply(velocity, frictionConstant);
+//      // spring force = (target point - current position) * spring constant
+//      let springForce = CGPointMultiply(CGPointSubtract(self.newCenter, self.view.center), springConstant);
+//      // force = spring force - friction force
+//      CGPoint force = CGPointSubtract(springForce, frictionForce);
+//      
+//      // velocity = current velocity + force * time / mass
+//      self.velocity = CGPointAdd(self.velocity, CGPointMultiply(force, time));
+//      // position = current position + velocity * time
+//      self.view.center = CGPointAdd(self.view.center, CGPointMultiply(self.velocity, time));
+//      
+//      CGFloat speed = CGPointLength(self.velocity);
+//      CGFloat distanceToGoal = CGPointLength(CGPointSubtract(self.targetPoint, self.view.center));
+//      if (speed < 0.05 && distanceToGoal < 1) {
+//        self.view.center = self.targetPoint;
+//        *finished = YES;
+//      }
+//    }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+}
