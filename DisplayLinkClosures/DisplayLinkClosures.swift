@@ -10,7 +10,7 @@ import Foundation
 import QuartzCore
 
 public typealias AnimeraHandler = (event:AnimeraEvent) -> Void
-public typealias AnimeraCompletionHandler = (isCancelled:Bool) -> Void
+public typealias AnimeraCompletionHandler = (isFinished:Bool) -> Void
 
 public class AnimeraEvent {
   private(set) var progress = 0.0
@@ -27,8 +27,8 @@ public class AnimeraEvent {
     didSet { self.timeElapsed += self.tick }
   }
   
-
-
+  private(set) var timingFunction = TimingFunctions.linearInterpolation
+  
   private      var originalValues = [String:Double]()
   ////  weak var animera:Animera
   private init() {
@@ -68,100 +68,75 @@ public class Animera {
   @objc private class InternalAnimeraWrapper  {
 
     let event = AnimeraEvent()
-    lazy var displayLink:CADisplayLink = CADisplayLink(target: self, selector: "update:")
     var animationHandler:AnimeraHandler
     var completionHandler:AnimeraCompletionHandler?
     var shouldAnimate:Bool { return self.event.timeElapsed <= self.event.duration }
-    
-
-
-    
+    lazy var displayLink:CADisplayLink = CADisplayLink(target: self, selector: "update:")
     
 
     init(duration:NSTimeInterval, handler:AnimeraHandler) {
       self.event.duration = duration
       self.animationHandler = handler
-      
+      self.toggle(isOn: false)
+      self.displayLink.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
     }
 
     @objc func update(displayLink:CADisplayLink) {
       self.event.tick = displayLink.duration
-      if(self.shouldAnimate == true) {
-        self.animationHandler(event: self.event)
-      }
-      else { self.stop(isCancelled: false) }
+      if(self.shouldAnimate == true) { self.animationHandler(event: self.event) }
+      else { self.stop(isFinished: true) }
     }
     
-    func stop(#isCancelled:Bool) {
+    func stop(#isFinished:Bool) {
       self.displayLink.invalidate()
       self.displayLink.paused = true
-      if let completion = self.completionHandler {
-        completion(isCancelled: isCancelled)
-        self.completionHandler = nil
-      }
+      if let completion = self.completionHandler { completion(isFinished: isFinished) }
+      self.completionHandler = nil
     }
     
-    func pause() {
-      self.displayLink.paused = true
-      self.displayLink.removeFromRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
-    }
-    
-    func resume() {
-      self.displayLink.paused = false
-      self.displayLink.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
-    }
-    
+    func toggle(#isOn:Bool) { self.displayLink.paused = (isOn == false) }
 
   }
   
   private var  wrapper:InternalAnimeraWrapper?
-
+  public var isPaused:Bool {
+      if let w = self.wrapper { return w.displayLink.paused }
+      else { return true }
+  }
+  
   init(){
     
   }
   
-  public func cancel() {
-    if let w = self.wrapper {
-      w.stop(isCancelled: true)
-    }
-  }
+  public func cancel() { self.wrapper?.stop(isFinished: false) }
   
-  public func pause() {
-    if let w = self.wrapper {
-      w.pause()
-    }
-    
-  }
+  public func pause() { self.wrapper?.toggle(isOn: false) }
   
-  public func resume() {
-    if let w = self.wrapper {
-      w.resume()
-    }
-    
-  }
+  public func resume() { self.wrapper?.toggle(isOn: true) }
 
   func onCompletion(handler:AnimeraCompletionHandler) {
-    if let w = self.wrapper {
-      w.completionHandler = handler
-    }
-
+    if let w = self.wrapper { w.completionHandler = handler }
   }
-  func runAnimationWithDuration(duration:NSTimeInterval, _ handler:AnimeraHandler) -> Animera {
+
+  func animationWithDuration(duration:NSTimeInterval, timingFunction:TimingFunctionHandler, _ handler:AnimeraHandler) -> Animera {
     self.cancel()
     self.wrapper = InternalAnimeraWrapper(duration: duration, handler:handler)
-    self.wrapper?.resume()
+    self.wrapper?.toggle(isOn: false)
+    return self
+  }
+
+  
+  func animationWithDuration(duration:NSTimeInterval, _ handler:AnimeraHandler) -> Animera {
+    self.cancel()
+    self.wrapper = InternalAnimeraWrapper(duration: duration, handler:handler)
+    self.wrapper?.toggle(isOn: false)
     return self
   }
   
-//  func runAnimationWithDuration(duration:NSTimeInterval, _ handler:DisplayLinkProgressHandler) -> Animera {
-//    
-////    self.displayLink?.invalidate()
-////    self.wrapper = InternalAnimeraWrapper(duration: duration, handler:handler)
-////    self.displayLink = CADisplayLink(target: self.wrapper, selector: "update:")
-////    displayLink!.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
-//    return self
-//    
-//  }
-  
+  func runAnimationWithDuration(duration:NSTimeInterval, _ handler:AnimeraHandler) {
+    self.cancel()
+    self.wrapper = InternalAnimeraWrapper(duration: duration, handler:handler)
+    self.wrapper?.toggle(isOn: true)
+  }
   
 }
