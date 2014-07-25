@@ -7,7 +7,7 @@
 //
 
 import UIKit
-
+import QuartzCore
 
 
 class ViewController: UIViewController {
@@ -20,6 +20,7 @@ class ViewController: UIViewController {
   var previousSize:CGSize?
   var newSize:CGSize?
 
+  
   var timingFunctionHandler = TimingFunctions.randomTimingFunction
   
   override func viewDidLoad() {
@@ -44,6 +45,7 @@ class ViewController: UIViewController {
     self.view.addGestureRecognizer(tap)
     self.view.addGestureRecognizer(pan)
     
+    
   }
   
   override func didReceiveMemoryWarning() {
@@ -53,12 +55,12 @@ class ViewController: UIViewController {
   
   
   func didTap(tap:UIPanGestureRecognizer) {
-//    if(tap.state == .Ended) {
-      self.newCenter = tap.locationInView(self.view)
-//      let velocityInPoints = tap.velocityInView(self.view)
-//      let velocity = CGVector(velocityInPoints.x, velocityInPoints.y)
-      self.update(CGPointZero)
-//    }
+    //    if(tap.state == .Ended) {
+    self.newCenter = tap.locationInView(self.view)
+    //      let velocityInPoints = tap.velocityInView(self.view)
+    //      let velocity = CGVector(velocityInPoints.x, velocityInPoints.y)
+    self.update(CGPointZero)
+    //    }
   }
   
   let animator = Animera()
@@ -66,120 +68,28 @@ class ViewController: UIViewController {
     
     self.previousCenter = self.box.center
     self.newCornerRadius = 20.sh_randomFromZero
-    let random = Double.sh_random(min: 25, max: 100)
-    self.newSize = CGSize(width: random, height: random)
+    let random = 100.sh_randomFromZero/100.0
 
-    self.animator.runAnimationWithDuration(5) { event in
-      self.box.center = event.tween("box", fromValue: self.box.center, toValue: self.newCenter!)
-      self.box.layer.cornerRadius = event.tween("boxCornerStuff", fromValue: self.box.layer.cornerRadius, toValue: self.newCornerRadius!)
-      self.box.frame.size = event.tween("LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
+    self.newSize = CGSize(width: 200.sh_randomFromZero, height: 200.sh_randomFromZero)
+    
+    
+    let newRandomColor = UIColor(red: 100.sh_randomFromZero/100, green: 100.sh_randomFromZero/100, blue: 100.sh_randomFromZero/100, alpha: 10.sh_randomFromZero/10.sh_clamp(min: 0.1, max: 1))
+
+    self.animator.onCompletion() { isFinished in
+      println(isFinished)
+    }.animationWithDuration(1) { event in
+        self.box.center = event.tween("box", fromValue: self.box.center, toValue: self.newCenter!)
+        self.box.layer.cornerRadius = event.tween("boxCornerStuff", fromValue: self.box.layer.cornerRadius, toValue: self.newCornerRadius!)
+        self.box.backgroundColor = event.tween("hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
+        self.box.frame.size = event.tween("LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
     }
     
     
-    let delay = 1 * Double(NSEC_PER_SEC)
-    let time = dispatch_time(DISPATCH_TIME_NOW, Int64(delay))
-    dispatch_after(time, dispatch_get_main_queue()) {
-      self.animator.pause()
-      let delay = 1 * Double(NSEC_PER_SEC)
-      let time = dispatch_time(DISPATCH_TIME_NOW, Int64(delay))
-      dispatch_after(time, dispatch_get_main_queue()) {
-        self.animator.resume()
-        
-        let delay = 1 * Double(NSEC_PER_SEC)
-        let time = dispatch_time(DISPATCH_TIME_NOW, Int64(delay))
-        dispatch_after(time, dispatch_get_main_queue()) {
-          self.animator.cancel()
-          
-        }
-
-        
-      }
-
-      
-    }
-    
-    
-    self.animator.onCompletion() { isCancelled in
-      println(isCancelled)
-    }
-
-    
-    
-
   }
   
-    
-//    self.animatorTransform.runAnimationWithDuration(0.5) { event in
-//      let frictionConstant = 20;
-//      let  springConstant = 300;
-//      let time = event.tick
-//      
-//      // friction force = velocity * friction constant
-//      
-//      let frictionForce = CGPointMultiply(velocity, frictionConstant);
-//      // spring force = (target point - current position) * spring constant
-//      let springForce = CGPointMultiply(CGPointSubtract(self.newCenter, self.view.center), springConstant);
-//      // force = spring force - friction force
-//      CGPoint force = CGPointSubtract(springForce, frictionForce);
-//      
-//      // velocity = current velocity + force * time / mass
-//      self.velocity = CGPointAdd(self.velocity, CGPointMultiply(force, time));
-//      // position = current position + velocity * time
-//      self.view.center = CGPointAdd(self.view.center, CGPointMultiply(self.velocity, time));
-//      
-//      CGFloat speed = CGPointLength(self.velocity);
-//      CGFloat distanceToGoal = CGPointLength(CGPointSubtract(self.targetPoint, self.view.center));
-//      if (speed < 0.05 && distanceToGoal < 1) {
-//        self.view.center = self.targetPoint;
-//        *finished = YES;
-//      }
-//    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  
+  
+  
 }
+    
+
