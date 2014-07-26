@@ -110,10 +110,10 @@ class ViewController: UIViewController {
     
     
     self.animator.animationWithDuration(3) { event in
-        self.box.center = event.tween("box", fromValue: self.box.center, toValue: self.newCenter!)
-        self.box.backgroundColor = event.tween("hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
-      self.box.frame.size = event.tween("LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
-      self.angle = event.tween("One of the angles", fromValue: self.angle, toValue: newAngle)
+        self.box.center = event.tween(identifier: "box", fromValue: self.box.center, toValue: self.newCenter!)
+        self.box.backgroundColor = event.tween(identifier: "hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
+      self.box.frame.size = event.tween(identifier: "LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
+      self.angle = event.tween(identifier: "One of the angles", fromValue: self.angle, toValue: newAngle)
       self.drawCanvas1(self.box.bounds)
       }.onCompletion(){ finished in
         println("NOT REVERSED")
@@ -133,18 +133,18 @@ class ViewController: UIViewController {
     let colorAnimation = Animera().onCompletion() { isFinished in
       println(isFinished)
       }.animationWithDuration(1) { event in
-        self.box.backgroundColor = event.tween("hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
+        self.box.backgroundColor = event.tween(identifier: "hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
     }
     
     
     let sizeAnimation = Animera().animationWithDuration(1) { event in
-      self.box.frame.size = event.tween("LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
+      self.box.frame.size = event.tween(identifier: "LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
       self.drawCanvas1(self.box.bounds)
       
     }
     
     let angleAnimation = Animera().animationWithDuration(1) { event in
-      self.angle = event.tween("One of the angles", fromValue: self.angle, toValue: newAngle)
+      self.angle = event.tween(identifier: "One of the angles", fromValue: self.angle, toValue: newAngle)
       self.drawCanvas1(self.box.bounds)
     }
 

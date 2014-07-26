@@ -9,6 +9,7 @@
 import Foundation
 import QuartzCore
 import UIKit
+
 public typealias AnimeraHandler = (event:AnimeraEvent) -> Void
 public typealias AnimeraCompletionHandler = (isFinished:Bool) -> Void
 
@@ -16,11 +17,9 @@ public class AnimeraEvent {
 
   private(set) var isReversing:Bool = false
   private(set) var timingFunction:(Double) -> (Double) = { t in return t }
-  
   private(set) var untimedProgress = 0.0
-  
   private(set) var progress = 0.0
-  
+
   var reversedProgress:Double  { return 1.0-self.progress }
   
   private(set) var duration:NSTimeInterval = 0
@@ -43,8 +42,10 @@ public class AnimeraEvent {
   
   private      var fromValues = [String:Double]()
 
+
+  private init() {}
   
-  func tween(identifier:String, fromValue:Double?, toValue:Double) -> Double {
+  func tween(#identifier:String, fromValue:Double?, toValue:Double) -> Double {
     if let existingValue = self.fromValues[identifier] {
       return (toValue * self.progress) + (existingValue * self.reversedProgress)
     }
@@ -54,22 +55,23 @@ public class AnimeraEvent {
     }
   }
   
-  func tween(identifier:String, fromValue:CGPoint, toValue:CGPoint) -> CGPoint {
-    let x = self.tween(identifier+"_X", fromValue: fromValue.x, toValue: toValue.x)
-    let y = self.tween(identifier+"_Y", fromValue: fromValue.y, toValue: toValue.y)
+  func tween(#identifier:String, fromValue:CGPoint, toValue:CGPoint) -> CGPoint {
+    
+    let x = self.tween(identifier:identifier+"_X", fromValue: fromValue.x, toValue: toValue.x)
+    let y = self.tween(identifier:identifier+"_Y", fromValue: fromValue.y, toValue: toValue.y)
     return CGPoint(x: x, y: y)
     
   }
 
-  func tween(identifier:String, fromValue:CGSize, toValue:CGSize) -> CGSize {
-    let width = self.tween(identifier+"_width", fromValue: fromValue.width, toValue: toValue.width)
-    let height = self.tween(identifier+"_height", fromValue: fromValue.height, toValue: toValue.height)
+  func tween(#identifier:String, fromValue:CGSize, toValue:CGSize) -> CGSize {
+    let width = self.tween(identifier:identifier+"_width", fromValue: fromValue.width, toValue: toValue.width)
+    let height = self.tween(identifier:identifier+"_height", fromValue: fromValue.height, toValue: toValue.height)
     return CGSize(width: width, height: height)
     
   }
 
   var colorToValues = [String:Double]()
-  func tween(identifier:String, fromValue:UIColor, toValue:UIColor) -> UIColor {
+  func tween(#identifier:String, fromValue:UIColor, toValue:UIColor) -> UIColor {
 
     let redIdentifier = identifier+"_finalRed"
     let greenIdentifier = identifier+"_finalGreen"
@@ -113,10 +115,10 @@ public class AnimeraEvent {
       alphaPointer.dealloc(1)
       
     }
-    let finalRed = self.tween(redIdentifier, fromValue: fromRed, toValue: self.colorToValues[redIdentifier]!)
-    let finalGreen = self.tween(greenIdentifier, fromValue: fromGreen, toValue: self.colorToValues[greenIdentifier]!)
-    let finalBlue = self.tween(blueIdentifier, fromValue: fromBlue, toValue: self.colorToValues[blueIdentifier]!)
-    let finalAlpha = self.tween(alphaIdentifier, fromValue: fromAlpha, toValue: self.colorToValues[alphaIdentifier]!)
+    let finalRed = self.tween(identifier:redIdentifier, fromValue: fromRed, toValue: self.colorToValues[redIdentifier]!)
+    let finalGreen = self.tween(identifier:greenIdentifier, fromValue: fromGreen, toValue: self.colorToValues[greenIdentifier]!)
+    let finalBlue = self.tween(identifier:blueIdentifier, fromValue: fromBlue, toValue: self.colorToValues[blueIdentifier]!)
+    let finalAlpha = self.tween(identifier:alphaIdentifier, fromValue: fromAlpha, toValue: self.colorToValues[alphaIdentifier]!)
     
     return UIColor(red: finalRed, green: finalGreen, blue: finalBlue, alpha: finalAlpha)
 
