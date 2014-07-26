@@ -19,13 +19,31 @@ class ViewController: UIViewController {
   var newCornerRadius:Double?
   var previousSize:CGSize?
   var newSize:CGSize?
-
+  var shape = CAShapeLayer()
   
   var timingFunctionHandler = TimingFunctions.randomTimingFunction
-  
+
+  func drawCanvas1(frame: CGRect) {
+    
+    //// Oval Drawing
+    var ovalRect = CGRectMake(frame.minX, frame.minY, floor((frame.width) * 1.00000 + 0.5), floor((frame.height) * 1.00000 + 0.5))
+    var ovalPath = UIBezierPath()
+    ovalPath.addArcWithCenter(CGPointMake(ovalRect.midX, ovalRect.midY), radius: ovalRect.width / 2.0, startAngle: self.angle * M_PI/180.0, endAngle: 315.0 * M_PI/180.0, clockwise: true)
+    ovalPath.addLineToPoint(CGPointMake(ovalRect.midX, ovalRect.midY))
+    ovalPath.closePath()
+    self.shape.path = ovalPath.CGPath
+    
+  }
+
   override func viewDidLoad() {
     super.viewDidLoad()
     
+    
+    self.drawCanvas1(self.box.bounds)
+    self.box.layer.mask = self.shape
+    
+    
+
     
 
     self.previousCornerRadius = self.box.layer.cornerRadius
@@ -64,25 +82,48 @@ class ViewController: UIViewController {
   }
   
   let animator = Animera()
+  var angle:Double = 45
+  
   func update(velocity:CGPoint) {
     
     self.previousCenter = self.box.center
     self.newCornerRadius = 20.sh_randomFromZero
     let random = 100.sh_randomFromZero/100.0
-
-    self.newSize = CGSize(width: 200.sh_randomFromZero, height: 200.sh_randomFromZero)
+    let circle = 200.sh_randomFromZero.sh_clamp(min: 50, max: 200)
+    self.newSize = CGSize(width: circle, height: circle)
     
+    let newAngle = 300.sh_randomFromZero
     
-    let newRandomColor = UIColor(red: 100.sh_randomFromZero/100, green: 100.sh_randomFromZero/100, blue: 100.sh_randomFromZero/100, alpha: 10.sh_randomFromZero/10.sh_clamp(min: 0.1, max: 1))
+    let newRandomColor = UIColor(red: 100.sh_randomFromZero/100, green: 100.sh_randomFromZero/100, blue: 100.sh_randomFromZero/100, alpha: (10.sh_randomFromZero/10).sh_clamp(min: 0.5, max: 1))
 
-    self.animator.onCompletion() { isFinished in
+    let positionAnimation = Animera().onCompletion() { isFinished in
       println(isFinished)
     }.animationWithDuration(1) { event in
         self.box.center = event.tween("box", fromValue: self.box.center, toValue: self.newCenter!)
-        self.box.layer.cornerRadius = event.tween("boxCornerStuff", fromValue: self.box.layer.cornerRadius, toValue: self.newCornerRadius!)
-        self.box.backgroundColor = event.tween("hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
-        self.box.frame.size = event.tween("LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
     }
+    
+    let colorAnimation = Animera().onCompletion() { isFinished in
+      println(isFinished)
+      }.animationWithDuration(1) { event in
+        self.box.backgroundColor = event.tween("hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
+    }
+    
+    
+    let sizeAnimation = Animera().animationWithDuration(1) { event in
+      self.box.frame.size = event.tween("LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
+      self.drawCanvas1(self.box.bounds)
+      
+    }
+    
+    let angleAnimation = Animera().animationWithDuration(1) { event in
+      self.angle = event.tween("One of the angles", fromValue: self.angle, toValue: newAngle)
+      self.drawCanvas1(self.box.bounds)
+    }
+
+    
+    AnimeraQueue(animations: [positionAnimation, colorAnimation,  sizeAnimation, angleAnimation]).resume()
+
+
     
     
   }

@@ -14,7 +14,7 @@ public typealias AnimeraCompletionHandler = (isFinished:Bool) -> Void
 
 public class AnimeraEvent {
 
-  private(set) var timingFunction:(Double) -> (Double) = { t in return t }
+  private(set) var timingFunction:(Double) -> (Double) = TimingFunctions.elasticEaseOut // { t in return t }
   
   private(set) var untimedProgress = 0.0
   
@@ -215,6 +215,10 @@ class AnimeraQueue : AnimeraCapabilities {
   }
   
   
+  init(animations:[Animera]) {
+    self.queuedAnimations = animations
+  }
+  
   var queuedAnimations = [Animera]()
   var runningAnimation:Animera?
   var executedAnimations = [Animera]()
@@ -243,16 +247,22 @@ class AnimeraQueue : AnimeraCapabilities {
     else {
       self.runningAnimation = self.queuedAnimations[0]
       self.queuedAnimations.removeAtIndex(0)
-      self.runningAnimation?.resume()
       let existinCompletionHandler = self.runningAnimation?.completionHandler
 
       dispatch_group_enter(self.signal)
-      self.runningAnimation?.onCompletion() { [weak self] isFinished in
+      self.runningAnimation?.onCompletion() { isFinished in
         if let finishedHandler = existinCompletionHandler { finishedHandler(isFinished: isFinished) }
-        if let weakSelf = self { dispatch_group_leave(weakSelf.signal) }
+        dispatch_group_leave(self.signal)
       }
     
-      dispatch_group_notify(self.signal, dispatch_get_main_queue()) { [weak self] in if let queue = self { queue.resume() } }
+      dispatch_group_notify(self.signal, dispatch_get_main_queue()) { [weak self] in
+        if let weakSelf = self {
+          weakSelf.runningAnimation = nil
+          weakSelf.resume()
+        }
+      }
+      self.runningAnimation?.resume()
+
     }
     
   }
