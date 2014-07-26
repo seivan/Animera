@@ -15,7 +15,7 @@ public typealias AnimeraCompletionHandler = (isFinished:Bool) -> Void
 public class AnimeraEvent {
 
   private(set) var isReversing:Bool = false
-  private(set) var timingFunction:(Double) -> (Double) = TimingFunctions.elasticEaseOut  //{ t in return t }
+  private(set) var timingFunction:(Double) -> (Double) = { t in return t }
   
   private(set) var untimedProgress = 0.0
   
@@ -262,9 +262,7 @@ class AnimeraQueue : AnimeraCapabilities {
   
   func resume() -> AnimeraQueue {
     if self.queuedAnimations.isEmpty { return self }
-    else if let animation = self.runningAnimation  {
-      animation.resume()
-    }
+    else if let animation = self.runningAnimation  { animation.resume() }
     else {
       self.runningAnimation = self.queuedAnimations[0]
       self.queuedAnimations.removeAtIndex(0)
