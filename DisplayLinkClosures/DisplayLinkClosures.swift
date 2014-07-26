@@ -14,7 +14,8 @@ public typealias AnimeraCompletionHandler = (isFinished:Bool) -> Void
 
 public class AnimeraEvent {
 
-  private(set) var timingFunction:(Double) -> (Double) = TimingFunctions.elasticEaseOut // { t in return t }
+  private(set) var isReversing:Bool = false
+  private(set) var timingFunction:(Double) -> (Double) = TimingFunctions.elasticEaseOut  //{ t in return t }
   
   private(set) var untimedProgress = 0.0
   
@@ -33,18 +34,22 @@ public class AnimeraEvent {
   }
   var timeLeft:NSTimeInterval  { return self.duration - self.timeElapsed }
   
-  private(set) var tick:NSTimeInterval = 0 { didSet { self.timeElapsed += self.tick } }
+  private(set) var tick:NSTimeInterval = 0 {
+    didSet {
+      if(self.isReversing) { self.timeElapsed -= self.tick }
+      else { self.timeElapsed += self.tick }
+    }
+  }
   
-  private      var originalValues = [String:Double]()
+  private      var fromValues = [String:Double]()
 
-  //private init() {}
   
   func tween(identifier:String, fromValue:Double?, toValue:Double) -> Double {
-    if let existingValue:Double = self.originalValues[identifier] {
+    if let existingValue = self.fromValues[identifier] {
       return (toValue * self.progress) + (existingValue * self.reversedProgress)
     }
     else {
-      self.originalValues[identifier] = fromValue!
+      self.fromValues[identifier] = fromValue!
       return (toValue * self.progress) + (fromValue! * self.reversedProgress)
     }
   }
@@ -65,22 +70,18 @@ public class AnimeraEvent {
 
   var colorToValues = [String:Double]()
   func tween(identifier:String, fromValue:UIColor, toValue:UIColor) -> UIColor {
+
     let redIdentifier = identifier+"_finalRed"
     let greenIdentifier = identifier+"_finalGreen"
     let blueIdentifier = identifier+"_finalBlue"
     let alphaIdentifier = identifier+"_finalAlpha"
     
-    if let existingValue:Double = self.originalValues[identifier+"_finalRed"] {
-
-      let finalRed = self.tween(redIdentifier, fromValue: nil, toValue: self.colorToValues[redIdentifier]!)
-      let finalGreen = self.tween(greenIdentifier, fromValue: nil, toValue: self.colorToValues[greenIdentifier]!)
-      let finalBlue = self.tween(blueIdentifier, fromValue: nil, toValue: self.colorToValues[blueIdentifier]!)
-      let finalAlpha = self.tween(alphaIdentifier, fromValue: nil, toValue: self.colorToValues[alphaIdentifier]!)
-
-      return UIColor(red: finalRed, green: finalGreen, blue: finalBlue, alpha: finalAlpha)
-
-    }
-    else {
+    var fromRed:CGFloat?
+    var fromGreen:CGFloat?
+    var fromBlue:CGFloat?
+    var fromAlpha:CGFloat?
+    
+    if self.fromValues[redIdentifier] == nil {
       var redPointer = UnsafePointer<CGFloat>.alloc(1)
       var greenPointer = UnsafePointer<CGFloat>.alloc(1)
       var bluePointer = UnsafePointer<CGFloat>.alloc(1)
@@ -88,10 +89,10 @@ public class AnimeraEvent {
       
       fromValue.getRed(redPointer, green: greenPointer, blue: bluePointer, alpha: alphaPointer)
       
-      let fromRed = redPointer.memory
-      let fromGreen = greenPointer.memory
-      let fromBlue = bluePointer.memory
-      let fromAlpha = alphaPointer.memory
+      fromRed = redPointer.memory
+      fromGreen = greenPointer.memory
+      fromBlue = bluePointer.memory
+      fromAlpha = alphaPointer.memory
       
       toValue.getRed(redPointer, green: greenPointer, blue: bluePointer, alpha: alphaPointer)
       
@@ -105,19 +106,20 @@ public class AnimeraEvent {
       self.colorToValues[blueIdentifier] = toBlue
       self.colorToValues[alphaIdentifier] = toAlpha
       
-      let finalRed = self.tween(redIdentifier, fromValue: fromRed, toValue: toRed)
-      let finalGreen = self.tween(greenIdentifier, fromValue: fromGreen, toValue: toGreen)
-      let finalBlue = self.tween(blueIdentifier, fromValue: fromBlue, toValue: toBlue)
-      let finalAlpha = self.tween(alphaIdentifier, fromValue: fromAlpha, toValue: toAlpha)
       
       redPointer.dealloc(1)
       greenPointer.dealloc(1)
       bluePointer.dealloc(1)
       alphaPointer.dealloc(1)
       
-      return UIColor(red: finalRed, green: finalGreen, blue: finalBlue, alpha: finalAlpha)
-      
     }
+    let finalRed = self.tween(redIdentifier, fromValue: fromRed, toValue: self.colorToValues[redIdentifier]!)
+    let finalGreen = self.tween(greenIdentifier, fromValue: fromGreen, toValue: self.colorToValues[greenIdentifier]!)
+    let finalBlue = self.tween(blueIdentifier, fromValue: fromBlue, toValue: self.colorToValues[blueIdentifier]!)
+    let finalAlpha = self.tween(alphaIdentifier, fromValue: fromAlpha, toValue: self.colorToValues[alphaIdentifier]!)
+    
+    return UIColor(red: finalRed, green: finalGreen, blue: finalBlue, alpha: finalAlpha)
+
     
   }
 
@@ -131,7 +133,7 @@ public class AnimeraEvent {
   let event = AnimeraEvent()
   var animationHandler:AnimeraHandler
   var completionHandler:AnimeraCompletionHandler?
-  var shouldAnimate:Bool { return self.event.timeElapsed <= self.event.duration }
+  var shouldAnimate:Bool { return self.event.untimedProgress <= 1.0 && self.event.untimedProgress >= 0.0 }
   lazy var displayLink:CADisplayLink = CADisplayLink(target: self, selector: "update:")
   
   
@@ -158,13 +160,18 @@ public class AnimeraEvent {
   
   func toggle(#isOn:Bool) { self.displayLink.paused = (isOn == false) }
   
+  func cancel() {
+    self.event.isReversing = true
+  }
+  
 }
 
 internal protocol AnimeraCapabilities {
   var isPaused:Bool { get }
-  func cancel()
-  func pause()
-  func resume()
+  func abort()
+  func cancelAndAbort()
+  func pause() -> Self
+  func resume() -> Self
   func onCompletion(handler:AnimeraCompletionHandler) -> Self
 }
 
@@ -182,11 +189,17 @@ public class Animera : AnimeraCapabilities {
     
   }
   
-  public func cancel() { self.wrapper?.stop(isFinished: false) }
+  public func abort() {
+    
+  }
+  public func cancelAndAbort() {
+//    self.wrapper?.stop(isFinished: false)
+    self.wrapper?.cancel()
+  }
   
-  public func pause() { self.wrapper?.toggle(isOn: false) }
+  public func pause() -> Animera { self.wrapper?.toggle(isOn: false); return self }
   
-  public func resume() { self.wrapper?.toggle(isOn: true) }
+  public func resume() -> Animera { self.wrapper?.toggle(isOn: true); return self }
 
   func onCompletion(handler:AnimeraCompletionHandler) -> Animera {
     self.completionHandler = handler
@@ -195,7 +208,7 @@ public class Animera : AnimeraCapabilities {
   }
   
   func animationWithDuration(duration:NSTimeInterval, _ handler:AnimeraHandler) -> Animera {
-    self.cancel()
+    self.abort()
     self.wrapper = InternalAnimeraWrapper(duration: duration, handler:handler, completionHandler:self.completionHandler)
     return self
   }
@@ -223,26 +236,34 @@ class AnimeraQueue : AnimeraCapabilities {
   var runningAnimation:Animera?
   var executedAnimations = [Animera]()
   
-  func cancel() {
+  func abort() {
     if let animation = self.runningAnimation {
-      animation.cancel()
+      animation.abort()
+      self.queuedAnimations.removeAll(keepCapacity: false)
+      self.runningAnimation = nil
+    }
+    
+  }
+  func cancelAndAbort() {
+    if let animation = self.runningAnimation {
+      animation.cancelAndAbort()
       self.queuedAnimations.removeAll(keepCapacity: false)
       self.runningAnimation = nil
     }
   }
   
-  func pause() {
+  func pause() -> AnimeraQueue {
     if let animation = self.runningAnimation {
       animation.pause()
     }
+    return self
     
   }
   
-  func resume() {
-    if self.queuedAnimations.isEmpty { return }
+  func resume() -> AnimeraQueue {
+    if self.queuedAnimations.isEmpty { return self }
     else if let animation = self.runningAnimation  {
       animation.resume()
-      return
     }
     else {
       self.runningAnimation = self.queuedAnimations[0]
@@ -264,6 +285,8 @@ class AnimeraQueue : AnimeraCapabilities {
       self.runningAnimation?.resume()
 
     }
+    
+    return self
     
   }
   

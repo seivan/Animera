@@ -96,11 +96,39 @@ class ViewController: UIViewController {
     
     let newRandomColor = UIColor(red: 100.sh_randomFromZero/100, green: 100.sh_randomFromZero/100, blue: 100.sh_randomFromZero/100, alpha: (10.sh_randomFromZero/10).sh_clamp(min: 0.5, max: 1))
 
-    let positionAnimation = Animera().onCompletion() { isFinished in
-      println(isFinished)
-    }.animationWithDuration(1) { event in
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    self.animator.animationWithDuration(3) { event in
         self.box.center = event.tween("box", fromValue: self.box.center, toValue: self.newCenter!)
+        self.box.backgroundColor = event.tween("hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
+      self.box.frame.size = event.tween("LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
+      self.angle = event.tween("One of the angles", fromValue: self.angle, toValue: newAngle)
+      self.drawCanvas1(self.box.bounds)
+      }.onCompletion(){ finished in
+        println("NOT REVERSED")
+        println(finished)
+      }.resume()
+    
+    let delay = 1.5 * Double(NSEC_PER_SEC)
+    let time = dispatch_time(DISPATCH_TIME_NOW, Int64(delay))
+    dispatch_after(time, dispatch_get_main_queue()) {
+      self.animator.onCompletion() { finished in
+        println("REVERSED")
+        println(finished)
+      }.cancelAndAbort()
     }
+        
     
     let colorAnimation = Animera().onCompletion() { isFinished in
       println(isFinished)
@@ -121,7 +149,9 @@ class ViewController: UIViewController {
     }
 
     
-    AnimeraQueue(animations: [positionAnimation, colorAnimation,  sizeAnimation, angleAnimation]).resume()
+//    AnimeraQueue(animations: [positionAnimation, colorAnimation,  sizeAnimation, angleAnimation]).resume()
+    
+    
 
 
     
