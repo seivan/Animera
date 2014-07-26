@@ -168,16 +168,16 @@ public class AnimeraEvent {
   
 }
 
-internal protocol AnimeraCapabilities {
+internal protocol AnimeraActions {
   var isPaused:Bool { get }
-  func abort()
-  func cancelAndAbort()
+  func cancel()
+  func cancelAndUndo()
   func pause() -> Self
   func resume() -> Self
   func onCompletion(handler:AnimeraCompletionHandler) -> Self
 }
 
-public class Animera : AnimeraCapabilities {
+public class Animera : AnimeraActions {
   
   private var  wrapper:InternalAnimeraWrapper?
   private var  completionHandler:AnimeraCompletionHandler?
@@ -191,10 +191,10 @@ public class Animera : AnimeraCapabilities {
     
   }
   
-  public func abort() {
-    
+  public func cancel() {
+    self.wrapper?.stop(isFinished: false)
   }
-  public func cancelAndAbort() {
+  public func cancelAndUndo() {
 //    self.wrapper?.stop(isFinished: false)
     self.wrapper?.cancel()
   }
@@ -210,7 +210,7 @@ public class Animera : AnimeraCapabilities {
   }
   
   func animationWithDuration(duration:NSTimeInterval, _ handler:AnimeraHandler) -> Animera {
-    self.abort()
+    self.cancel()
     self.wrapper = InternalAnimeraWrapper(duration: duration, handler:handler, completionHandler:self.completionHandler)
     return self
   }
@@ -223,7 +223,7 @@ public class Animera : AnimeraCapabilities {
   
 }
 
-class AnimeraQueue : AnimeraCapabilities {
+class AnimeraQueue : AnimeraActions {
   let signal:dispatch_group_t = dispatch_group_create()
   var isPaused:Bool {
   return true
@@ -238,17 +238,17 @@ class AnimeraQueue : AnimeraCapabilities {
   var runningAnimation:Animera?
   var executedAnimations = [Animera]()
   
-  func abort() {
+  func cancel() {
     if let animation = self.runningAnimation {
-      animation.abort()
+      animation.cancel()
       self.queuedAnimations.removeAll(keepCapacity: false)
       self.runningAnimation = nil
     }
     
   }
-  func cancelAndAbort() {
+  func cancelAndUndo() {
     if let animation = self.runningAnimation {
-      animation.cancelAndAbort()
+      animation.cancelAndUndo()
       self.queuedAnimations.removeAll(keepCapacity: false)
       self.runningAnimation = nil
     }

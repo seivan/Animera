@@ -126,7 +126,12 @@ class ViewController: UIViewController {
       self.animator.onCompletion() { finished in
         println("REVERSED")
         println(finished)
-      }.cancelAndAbort()
+      }.cancelAndUndo()
+      let delay = 0.75 * Double(NSEC_PER_SEC)
+      let time = dispatch_time(DISPATCH_TIME_NOW, Int64(delay))
+      dispatch_after(time, dispatch_get_main_queue()) {
+        self.animator.cancel()
+      }
     }
         
     
