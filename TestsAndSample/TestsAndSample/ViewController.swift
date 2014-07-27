@@ -35,14 +35,18 @@ class ViewController: UIViewController {
     
   }
 
+  func toggleButtons(isOn:Bool) {
+    for button:UIBarButtonItem in self.toolbarItems as [UIBarButtonItem] {
+      button.enabled = isOn
+    }
+  }
   override func viewDidLoad() {
     super.viewDidLoad()
     
     
     self.drawCanvas1(self.box.bounds)
     self.box.layer.mask = self.shape
-    
-    
+    self.toggleButtons(false)
 
     
 
@@ -73,18 +77,14 @@ class ViewController: UIViewController {
   
   
   func didTap(tap:UIPanGestureRecognizer) {
-    //    if(tap.state == .Ended) {
     self.newCenter = tap.locationInView(self.view)
-    //      let velocityInPoints = tap.velocityInView(self.view)
-    //      let velocity = CGVector(velocityInPoints.x, velocityInPoints.y)
-    self.update(CGPointZero)
-    //    }
+    self.update()
   }
   
   let animator = Animera()
   var angle:Double = 45
   
-  func update(velocity:CGPoint) {
+  func update() {
     
     self.previousCenter = self.box.center
     self.newCornerRadius = 20.sh_randomFromZero
@@ -102,42 +102,30 @@ class ViewController: UIViewController {
     
     
     
+     self.toggleButtons(true)
     
     
     
     
     
     
-    
-    self.animator.animationWithDuration(3) { event in
+    self.animator.animationWithDuration(1) { event in
         self.box.center = event.tween(identifier: "box", fromValue: self.box.center, toValue: self.newCenter!)
         self.box.backgroundColor = event.tween(identifier: "hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
       self.box.frame.size = event.tween(identifier: "LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
       self.angle = event.tween(identifier: "One of the angles", fromValue: self.angle, toValue: newAngle)
       self.drawCanvas1(self.box.bounds)
       }.onCompletion(){ finished in
+        self.toggleButtons(false)
         println("NOT REVERSED")
         println(finished)
       }.resume()
     
-    let delay = 1.5 * Double(NSEC_PER_SEC)
-    let time = dispatch_time(DISPATCH_TIME_NOW, Int64(delay))
-    dispatch_after(time, dispatch_get_main_queue()) {
-      self.animator.onCompletion() { finished in
-        println("REVERSED")
-        println(finished)
-      }.cancelAndUndo()
-      let delay = 0.75 * Double(NSEC_PER_SEC)
-      let time = dispatch_time(DISPATCH_TIME_NOW, Int64(delay))
-      dispatch_after(time, dispatch_get_main_queue()) {
-        self.animator.cancel()
-      }
-    }
-        
+    
     
     let colorAnimation = Animera().onCompletion() { isFinished in
       println(isFinished)
-      }.animationWithDuration(1) { event in
+      }.animationWithDuration(2) { event in
         self.box.backgroundColor = event.tween(identifier: "hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
     }
     
@@ -156,15 +144,30 @@ class ViewController: UIViewController {
     
 //    AnimeraQueue(animations: [positionAnimation, colorAnimation,  sizeAnimation, angleAnimation]).resume()
     
-    
-
-
-    
-    
   }
   
   
+  @IBAction func tapTogglePauseOrResume(sender:UIBarButtonItem) {
+    self.animator.isPaused = !self.animator.isPaused
+    
+    if(self.animator.isPaused) {
+      sender.title = "Resume"
+    }
+    else {
+      sender.title = "Pause"
+    }
+  }
   
+  @IBAction func tapCancel(sender:UIBarButtonItem?) {
+    self.animator.cancel()
+    self.toggleButtons(false)
+  }
+
+  @IBAction func tapCancelAndAbort(sender:UIBarButtonItem) {
+    self.animator.resume()
+    self.animator.cancelAndUndo()
+  }
+
   
 }
     

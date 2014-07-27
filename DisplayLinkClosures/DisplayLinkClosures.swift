@@ -160,11 +160,9 @@ public class AnimeraEvent {
     self.displayLink.paused = true
   }
   
-  func toggle(#isOn:Bool) { self.displayLink.paused = (isOn == false) }
+  func toggle(#isOn:Bool) { self.displayLink.paused = isOn == false }
   
-  func cancel() {
-    self.event.isReversing = true
-  }
+  func cancelAndUndo() { self.event.isReversing = self.event.isReversing == false }
   
 }
 
@@ -172,8 +170,8 @@ internal protocol AnimeraActions {
   var isPaused:Bool { get }
   func cancel()
   func cancelAndUndo()
-  func pause() -> Self
-  func resume() -> Self
+  func pause()
+  func resume()
   func onCompletion(handler:AnimeraCompletionHandler) -> Self
 }
 
@@ -183,8 +181,18 @@ public class Animera : AnimeraActions {
   private var  completionHandler:AnimeraCompletionHandler?
   
   public var isPaused:Bool {
+    get {
       if let w = self.wrapper { return w.displayLink.paused }
       else { return true }
+    }
+    set {
+      if newValue == true {
+        self.pause()
+      }
+      else {
+        self.resume()
+      }
+    }
   }
   
   init(){
@@ -195,13 +203,12 @@ public class Animera : AnimeraActions {
     self.wrapper?.stop(isFinished: false)
   }
   public func cancelAndUndo() {
-//    self.wrapper?.stop(isFinished: false)
-    self.wrapper?.cancel()
+    self.wrapper?.cancelAndUndo()
   }
   
-  public func pause() -> Animera { self.wrapper?.toggle(isOn: false); return self }
+  public func pause() { self.wrapper?.toggle(isOn: false) }
   
-  public func resume() -> Animera { self.wrapper?.toggle(isOn: true); return self }
+  public func resume() { self.wrapper?.toggle(isOn: true) }
 
   func onCompletion(handler:AnimeraCompletionHandler) -> Animera {
     self.completionHandler = handler
@@ -254,16 +261,16 @@ class AnimeraQueue : AnimeraActions {
     }
   }
   
-  func pause() -> AnimeraQueue {
+  func pause()  {
     if let animation = self.runningAnimation {
       animation.pause()
     }
-    return self
+
     
   }
   
-  func resume() -> AnimeraQueue {
-    if self.queuedAnimations.isEmpty { return self }
+  func resume()  {
+    if self.queuedAnimations.isEmpty { return }
     else if let animation = self.runningAnimation  { animation.resume() }
     else {
       self.runningAnimation = self.queuedAnimations[0]
@@ -286,7 +293,7 @@ class AnimeraQueue : AnimeraActions {
 
     }
     
-    return self
+
     
   }
   
