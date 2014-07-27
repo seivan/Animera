@@ -24,21 +24,23 @@ public class AnimeraEvent {
   
   private(set) var duration:NSTimeInterval = 0
   
-  private(set) var timeElapsed:NSTimeInterval = 0 {
-    willSet {
-      self.progress = self.timeElapsed/self.duration
-      self.untimedProgress = self.progress
-    }
-    didSet { self.progress = self.timingFunction(self.progress) }
-  }
+  private(set) var timeElapsed:NSTimeInterval = 0
+//  {
+//    willSet {
+//      self.progress = self.timeElapsed/self.duration
+//      self.untimedProgress = self.progress
+//    }
+//    didSet { self.progress = self.timingFunction(self.progress) }
+//  }
   var timeLeft:NSTimeInterval  { return self.duration - self.timeElapsed }
   
-  private(set) var tick:NSTimeInterval = 0 {
-    didSet {
-      if(self.isReversing) { self.timeElapsed -= self.tick }
-      else { self.timeElapsed += self.tick }
-    }
-  }
+  private(set) var tick:NSTimeInterval = 0
+//  {
+//    didSet {
+//      if(self.isReversing) { self.timeElapsed -= self.tick }
+//      else { self.timeElapsed += self.tick }
+//    }
+//  }
   
   private      var fromValues = [String:Double]()
 
@@ -142,22 +144,47 @@ public class AnimeraEvent {
   init(duration:NSTimeInterval, handler:AnimeraHandler, completionHandler:AnimeraCompletionHandler?) {
     self.event.duration = duration
     self.animationHandler = handler
-    self.completionHandler = completionHandler
-    self.toggle(isOn: false)
+//    self.completionHandler = completionHandler
+//    self.toggle(isOn: false)
     self.displayLink.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
   }
   
+  
+//  private(set) var timeElapsed:NSTimeInterval = 0
+  //  {
+  //    willSet {
+  //      self.progress = self.timeElapsed/self.duration
+  //      self.untimedProgress = self.progress
+  //    }
+  //    didSet { self.progress = self.timingFunction(self.progress) }
+  //  }
+  
+//  private(set) var tick:NSTimeInterval = 0
+  //  {
+  //    didSet {
+  //      if(self.isReversing) { self.timeElapsed -= self.tick }
+  //      else { self.timeElapsed += self.tick }
+  //    }
+  //  }
+
+  
   @objc func update(displayLink:CADisplayLink) {
     self.event.tick = displayLink.duration
-    if(self.shouldAnimate == true) { self.animationHandler(event: self.event) }
+    if self.event.isReversing { self.event.timeElapsed -= self.event.tick  }
+    else { self.event.timeElapsed += self.event.tick}
+    self.event.progress = self.event.timeElapsed / self.event.duration
+    self.event.untimedProgress = self.event.progress
+    self.event.progress = self.event.timingFunction(self.event.progress)
+    
+    if self.shouldAnimate == true { self.animationHandler(event: self.event) }
     else { self.stop(isFinished: true) }
   }
   
   func stop(#isFinished:Bool) {
     self.displayLink.invalidate()
-    if(self.displayLink.paused == false) { if let completion = self.completionHandler { completion(isFinished: isFinished) } }
-    self.completionHandler = nil
-    self.displayLink.paused = true
+//    if(self.displayLink.paused == false) { if let completion = self.completionHandler { completion(isFinished: isFinished) } }
+//    self.completionHandler = nil
+//    self.displayLink.paused = true
   }
   
   func toggle(#isOn:Bool) { self.displayLink.paused = isOn == false }

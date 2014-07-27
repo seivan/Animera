@@ -45,7 +45,7 @@ class ViewController: UIViewController {
     
     
     self.drawCanvas1(self.box.bounds)
-    self.box.layer.mask = self.shape
+//    self.box.layer.mask = self.shape
     self.toggleButtons(false)
 
     
@@ -109,37 +109,33 @@ class ViewController: UIViewController {
     
     
     
-    self.animator.animationWithDuration(1) { event in
+    self.animator.runAnimationWithDuration(1) { event in
         self.box.center = event.tween(identifier: "box", fromValue: self.box.center, toValue: self.newCenter!)
-        self.box.backgroundColor = event.tween(identifier: "hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
-      self.box.frame.size = event.tween(identifier: "LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
-      self.angle = event.tween(identifier: "One of the angles", fromValue: self.angle, toValue: newAngle)
-      self.drawCanvas1(self.box.bounds)
-      }.onCompletion(){ finished in
-        self.toggleButtons(false)
-        println("NOT REVERSED")
-        println(finished)
-      }.resume()
+//        self.box.backgroundColor = event.tween(identifier: "hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
+//      self.box.frame.size = event.tween(identifier: "LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
+//      self.angle = event.tween(identifier: "One of the angles", fromValue: self.angle, toValue: newAngle)
+//      self.drawCanvas1(self.box.bounds)
+      }
     
     
     
-    let colorAnimation = Animera().onCompletion() { isFinished in
-      println(isFinished)
-      }.animationWithDuration(2) { event in
-        self.box.backgroundColor = event.tween(identifier: "hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
-    }
-    
-    
-    let sizeAnimation = Animera().animationWithDuration(1) { event in
-      self.box.frame.size = event.tween(identifier: "LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
-      self.drawCanvas1(self.box.bounds)
-      
-    }
-    
-    let angleAnimation = Animera().animationWithDuration(1) { event in
-      self.angle = event.tween(identifier: "One of the angles", fromValue: self.angle, toValue: newAngle)
-      self.drawCanvas1(self.box.bounds)
-    }
+//    let colorAnimation = Animera().onCompletion() { isFinished in
+//      println(isFinished)
+//      }.animationWithDuration(2) { event in
+//        self.box.backgroundColor = event.tween(identifier: "hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
+//    }
+//    
+//    
+//    let sizeAnimation = Animera().animationWithDuration(1) { event in
+//      self.box.frame.size = event.tween(identifier: "LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
+//      self.drawCanvas1(self.box.bounds)
+//      
+//    }
+//    
+//    let angleAnimation = Animera().animationWithDuration(1) { event in
+//      self.angle = event.tween(identifier: "One of the angles", fromValue: self.angle, toValue: newAngle)
+//      self.drawCanvas1(self.box.bounds)
+//    }
 
     
 //    AnimeraQueue(animations: [positionAnimation, colorAnimation,  sizeAnimation, angleAnimation]).resume()
@@ -148,24 +144,24 @@ class ViewController: UIViewController {
   
   
   @IBAction func tapTogglePauseOrResume(sender:UIBarButtonItem) {
-    self.animator.isPaused = !self.animator.isPaused
-    
-    if(self.animator.isPaused) {
-      sender.title = "Resume"
-    }
-    else {
-      sender.title = "Pause"
-    }
+//    self.animator.isPaused = !self.animator.isPaused
+//    
+//    if(self.animator.isPaused) {
+//      sender.title = "Resume"
+//    }
+//    else {
+//      sender.title = "Pause"
+//    }
   }
   
   @IBAction func tapCancel(sender:UIBarButtonItem?) {
-    self.animator.cancel()
-    self.toggleButtons(false)
+//    self.animator.cancel()
+//    self.toggleButtons(false)
   }
 
   @IBAction func tapCancelAndAbort(sender:UIBarButtonItem) {
-    self.animator.resume()
-    self.animator.cancelAndUndo()
+//    self.animator.resume()
+//    self.animator.cancelAndUndo()
   }
 
   
