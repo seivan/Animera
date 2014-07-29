@@ -15,39 +15,32 @@ public typealias AnimeraCompletionHandler = (isFinished:Bool) -> Void
 
 public class AnimeraEvent {
 
-  private(set) var isReversing:Bool = false
+  private(set) var tick:NSTimeInterval = 0 {
+    didSet {
+      if self.isReversing { self.timeElapsed -= self.tick  }
+      else { self.timeElapsed += self.tick}
+      self.untimedProgress = self.timeElapsed / self.duration
+      self.progress = self.timingFunction(self.untimedProgress)
+    }
+  }
+  
   private(set) var timingFunction:(Double) -> (Double) = { t in return t }
   private(set) var untimedProgress = 0.0
   private(set) var progress = 0.0
-
-  var reversedProgress:Double  { return 1.0-self.progress }
-  
+  private(set) var isReversing = false
+  public var reversedProgress:Double  { return 1.0-self.progress }
   private(set) var duration:NSTimeInterval = 0
-  
   private(set) var timeElapsed:NSTimeInterval = 0
-//  {
-//    willSet {
-//      self.progress = self.timeElapsed/self.duration
-//      self.untimedProgress = self.progress
-//    }
-//    didSet { self.progress = self.timingFunction(self.progress) }
-//  }
   var timeLeft:NSTimeInterval  { return self.duration - self.timeElapsed }
-  
-  private(set) var tick:NSTimeInterval = 0
-//  {
-//    didSet {
-//      if(self.isReversing) { self.timeElapsed -= self.tick }
-//      else { self.timeElapsed += self.tick }
-//    }
-//  }
-  
+
+
   private      var fromValues = [String:Double]()
 
 
   private init() {}
   
-  func tween(#identifier:String, fromValue:Double?, toValue:Double) -> Double {
+  
+  public func tween(#identifier:String, fromValue:Double?, toValue:Double) -> Double {
     if let existingValue = self.fromValues[identifier] {
       return (toValue * self.progress) + (existingValue * self.reversedProgress)
     }
@@ -57,7 +50,7 @@ public class AnimeraEvent {
     }
   }
   
-  func tween(#identifier:String, fromValue:CGPoint, toValue:CGPoint) -> CGPoint {
+  public func tween(#identifier:String, fromValue:CGPoint, toValue:CGPoint) -> CGPoint {
     
     let x = self.tween(identifier:identifier+"_X", fromValue: fromValue.x, toValue: toValue.x)
     let y = self.tween(identifier:identifier+"_Y", fromValue: fromValue.y, toValue: toValue.y)
@@ -65,15 +58,15 @@ public class AnimeraEvent {
     
   }
 
-  func tween(#identifier:String, fromValue:CGSize, toValue:CGSize) -> CGSize {
+  public func tween(#identifier:String, fromValue:CGSize, toValue:CGSize) -> CGSize {
     let width = self.tween(identifier:identifier+"_width", fromValue: fromValue.width, toValue: toValue.width)
     let height = self.tween(identifier:identifier+"_height", fromValue: fromValue.height, toValue: toValue.height)
     return CGSize(width: width, height: height)
     
   }
 
-  var colorToValues = [String:Double]()
-  func tween(#identifier:String, fromValue:UIColor, toValue:UIColor) -> UIColor {
+  private var colorToValues = [String:Double]()
+  public func tween(#identifier:String, fromValue:UIColor, toValue:UIColor) -> UIColor {
 
     let redIdentifier = identifier+"_finalRed"
     let greenIdentifier = identifier+"_finalGreen"
@@ -144,68 +137,56 @@ public class AnimeraEvent {
   init(duration:NSTimeInterval, handler:AnimeraHandler, completionHandler:AnimeraCompletionHandler?) {
     self.event.duration = duration
     self.animationHandler = handler
-//    self.completionHandler = completionHandler
-//    self.toggle(isOn: false)
-    self.displayLink.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
+    self.completionHandler = completionHandler
+    self.activateLoop()
   }
-  
-  
-//  private(set) var timeElapsed:NSTimeInterval = 0
-  //  {
-  //    willSet {
-  //      self.progress = self.timeElapsed/self.duration
-  //      self.untimedProgress = self.progress
-  //    }
-  //    didSet { self.progress = self.timingFunction(self.progress) }
-  //  }
-  
-//  private(set) var tick:NSTimeInterval = 0
-  //  {
-  //    didSet {
-  //      if(self.isReversing) { self.timeElapsed -= self.tick }
-  //      else { self.timeElapsed += self.tick }
-  //    }
-  //  }
-
   
   @objc func update(displayLink:CADisplayLink) {
     self.event.tick = displayLink.duration
-    if self.event.isReversing { self.event.timeElapsed -= self.event.tick  }
-    else { self.event.timeElapsed += self.event.tick}
-    self.event.progress = self.event.timeElapsed / self.event.duration
-    self.event.untimedProgress = self.event.progress
-    self.event.progress = self.event.timingFunction(self.event.progress)
-    
     if self.shouldAnimate == true { self.animationHandler(event: self.event) }
     else { self.stop(isFinished: true) }
   }
   
   func stop(#isFinished:Bool) {
     self.displayLink.invalidate()
-//    if(self.displayLink.paused == false) { if let completion = self.completionHandler { completion(isFinished: isFinished) } }
-//    self.completionHandler = nil
-//    self.displayLink.paused = true
+    if(self.displayLink.paused == false) { if let completion = self.completionHandler { completion(isFinished: isFinished) } }
+    self.completionHandler = nil
+    self.displayLink.paused = true
   }
   
-  func toggle(#isOn:Bool) { self.displayLink.paused = isOn == false }
+  func toggleOn(isOn:Bool) { self.displayLink.paused = isOn == false }
   
-  func cancelAndUndo() { self.event.isReversing = self.event.isReversing == false }
+  func cancelAndUndo() {
+    self.stop(isFinished: false)
+    self.activateLoop()
+    self.toggleOn(true)
+    self.event.isReversing = self.event.isReversing == false
+  }
+  
+  func activateLoop() {
+    self.displayLink = CADisplayLink(target: self, selector: "update:")
+    self.toggleOn(false)
+    self.displayLink.addToRunLoop(NSRunLoop.mainRunLoop(), forMode: NSDefaultRunLoopMode)
+  }
+
   
 }
 
-internal protocol AnimeraActions {
-  var isPaused:Bool { get }
+public protocol AnimeraActions {
+  var isPaused:Bool { get set }
+  var completionHandler:AnimeraCompletionHandler? { get }
   func cancel()
   func cancelAndUndo()
   func pause()
   func resume()
   func onCompletion(handler:AnimeraCompletionHandler) -> Self
+  
 }
 
 public class Animera : AnimeraActions {
   
   private var  wrapper:InternalAnimeraWrapper?
-  private var  completionHandler:AnimeraCompletionHandler?
+  public var  completionHandler:AnimeraCompletionHandler?
   
   public var isPaused:Bool {
     get {
@@ -233,11 +214,11 @@ public class Animera : AnimeraActions {
     self.wrapper?.cancelAndUndo()
   }
   
-  public func pause() { self.wrapper?.toggle(isOn: false) }
+  public func pause() { self.wrapper?.toggleOn(false) }
   
-  public func resume() { self.wrapper?.toggle(isOn: true) }
+  public func resume() { self.wrapper?.toggleOn(true) }
 
-  func onCompletion(handler:AnimeraCompletionHandler) -> Animera {
+  public func onCompletion(handler:AnimeraCompletionHandler) -> Animera {
     self.completionHandler = handler
     if let w = self.wrapper { w.completionHandler = self.completionHandler }
     return self
@@ -251,80 +232,135 @@ public class Animera : AnimeraActions {
   
   func runAnimationWithDuration(duration:NSTimeInterval, _ handler:AnimeraHandler) -> Animera {
     self.animationWithDuration(duration, handler)
-    self.wrapper?.toggle(isOn: true)
+    self.wrapper?.toggleOn(true)
     return self
   }
   
 }
 
-class AnimeraQueue : AnimeraActions {
-  let signal:dispatch_group_t = dispatch_group_create()
-  var isPaused:Bool {
-  return true
-  }
+public class AnimeraGroup : AnimeraActions {
   
+  private var isUndoing = false
   
-  init(animations:[Animera]) {
-    self.queuedAnimations = animations
-  }
+  private let signal:dispatch_group_t = dispatch_group_create()
+  private var groupedAnimations   = [Animera]()
+  private var runningAnimations   = [Animera]()
+  private var executedAnimations  = [Animera]()
+
+  private let isQueued = false
+
+  public var  completionHandler:AnimeraCompletionHandler?
   
-  var queuedAnimations = [Animera]()
-  var runningAnimation:Animera?
-  var executedAnimations = [Animera]()
-  
-  func cancel() {
-    if let animation = self.runningAnimation {
-      animation.cancel()
-      self.queuedAnimations.removeAll(keepCapacity: false)
-      self.runningAnimation = nil
+  public var isPaused:Bool {
+    get {
+      let animation = self.runningAnimations[0]
+      if(animation !== nil) { return animation.isPaused}
+      else { return true }
     }
+  set {
+    if newValue == true {
+      self.pause()
+    }
+    else {
+      self.resume()
+    }
+  }
+  }
+  
+  public init(isQueued:Bool = false) {
+    self.isQueued = isQueued
+  }
+  
+  public convenience init(animations:[Animera], isQueued:Bool = false) {
+    self.init(isQueued:isQueued)
+    self.groupedAnimations = animations
+  }
+  
+  
+  private func callbackFinished(isFinsished:Bool) {
+    if let existingHandler = self.completionHandler {
+      existingHandler(isFinished: isFinsished)
+      self.completionHandler = nil
+    }
+  }
+  public func cancel() {
+    for animation in self.runningAnimations {
+      animation.cancel()
+    }
+    self.callbackFinished(false)
+    self.groupedAnimations.removeAll(keepCapacity: false)
+
+    
     
   }
-  func cancelAndUndo() {
-    if let animation = self.runningAnimation {
-      animation.cancelAndUndo()
-      self.queuedAnimations.removeAll(keepCapacity: false)
-      self.runningAnimation = nil
+
+  public func cancelAndUndo() {
+    for animation in self.runningAnimations {
+      animation.pause()
+      self.executedAnimations += animation
     }
+    self.runningAnimations.removeAll(keepCapacity: true)
+    
   }
   
-  func pause()  {
-    if let animation = self.runningAnimation {
+  public func pause()  {
+    for animation in self.runningAnimations {
       animation.pause()
     }
 
     
   }
   
-  func resume()  {
-    if self.queuedAnimations.isEmpty { return }
-    else if let animation = self.runningAnimation  { animation.resume() }
-    else {
-      self.runningAnimation = self.queuedAnimations[0]
-      self.queuedAnimations.removeAtIndex(0)
-      let existinCompletionHandler = self.runningAnimation?.completionHandler
-
-      dispatch_group_enter(self.signal)
-      self.runningAnimation?.onCompletion() { isFinished in
-        if let finishedHandler = existinCompletionHandler { finishedHandler(isFinished: isFinished) }
-        dispatch_group_leave(self.signal)
+  public func resume()  {
+    if(self.isQueued) {
+      if self.groupedAnimations.isEmpty {
+        self.callbackFinished(true)
+        return
       }
-    
-      dispatch_group_notify(self.signal, dispatch_get_main_queue()) { [weak self] in
-        if let weakSelf = self {
-          weakSelf.runningAnimation = nil
-          weakSelf.resume()
+      else if self.runningAnimations.isEmpty == false { for animation in self.runningAnimations  { animation.resume() } }
+      else {
+        let animation = self.groupedAnimations[0]
+        self.runningAnimations = [animation]
+        self.groupedAnimations.removeAtIndex(0)
+        let optionalCompletionHandler = animation.completionHandler
+        
+        dispatch_group_enter(self.signal)
+        animation.onCompletion() { isFinished in
+          if let existingHandler = optionalCompletionHandler { existingHandler(isFinished: isFinished) }
+          self.executedAnimations += animation
+          dispatch_group_leave(self.signal)
         }
+        
+        dispatch_group_notify(self.signal, dispatch_get_main_queue()) { [weak self] in
+          if let weakSelf = self {
+//            for (idx, element) in enumerate(weakSelf.runningAnimations) {
+//              if element === animation {
+//                self?.runningAnimations.removeAtIndex(idx)
+//                break
+//              }
+//            }
+            weakSelf.runningAnimations = [Animera]()
+            weakSelf.resume()
+          }
+        }
+        if(self.isUndoing) { animation.cancelAndUndo() }
+        else { animation.resume() }
+        
+        
       }
-      self.runningAnimation?.resume()
-
+      
     }
+    else {
+      
+    }
+
     
 
     
   }
   
-  func onCompletion(handler:AnimeraCompletionHandler) -> AnimeraQueue {
+  public func onCompletion(handler:AnimeraCompletionHandler) -> AnimeraGroup {
+    self.completionHandler = handler
     return self
   }
   

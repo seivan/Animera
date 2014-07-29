@@ -45,7 +45,7 @@ class ViewController: UIViewController {
     
     
     self.drawCanvas1(self.box.bounds)
-//    self.box.layer.mask = self.shape
+    self.box.layer.mask = self.shape
     self.toggleButtons(false)
 
     
@@ -82,6 +82,7 @@ class ViewController: UIViewController {
   }
   
   let animator = Animera()
+//  var animator = AnimeraGroup()
   var angle:Double = 45
   
   func update() {
@@ -107,61 +108,69 @@ class ViewController: UIViewController {
     
     
     
-    
-    
-    self.animator.runAnimationWithDuration(1) { event in
-        self.box.center = event.tween(identifier: "box", fromValue: self.box.center, toValue: self.newCenter!)
-//        self.box.backgroundColor = event.tween(identifier: "hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
-//      self.box.frame.size = event.tween(identifier: "LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
-//      self.angle = event.tween(identifier: "One of the angles", fromValue: self.angle, toValue: newAngle)
-//      self.drawCanvas1(self.box.bounds)
+    func completedTask(task:String) -> AnimeraCompletionHandler {
+      return { didFinish in
+        println("Task \(task) completion status is \(didFinish)")
       }
+    }
     
     
     
-//    let colorAnimation = Animera().onCompletion() { isFinished in
-//      println(isFinished)
-//      }.animationWithDuration(2) { event in
-//        self.box.backgroundColor = event.tween(identifier: "hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
-//    }
-//    
-//    
-//    let sizeAnimation = Animera().animationWithDuration(1) { event in
-//      self.box.frame.size = event.tween(identifier: "LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
-//      self.drawCanvas1(self.box.bounds)
-//      
-//    }
-//    
-//    let angleAnimation = Animera().animationWithDuration(1) { event in
-//      self.angle = event.tween(identifier: "One of the angles", fromValue: self.angle, toValue: newAngle)
-//      self.drawCanvas1(self.box.bounds)
-//    }
+    
+    let positionAnimation = self.animator.animationWithDuration(1) { event in
+        self.box.center = event.tween(identifier: "box", fromValue: self.box.center, toValue: self.newCenter!)
+      }.onCompletion(completedTask("Position"))
+    
+    
+    let colorAnimation = Animera().onCompletion(completedTask("Color")).animationWithDuration(2) { event in
+        self.box.backgroundColor = event.tween(identifier: "hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
+    }
+    
+    
+    let sizeAnimation = Animera().animationWithDuration(1) { event in
+      self.box.frame.size = event.tween(identifier: "LOLSIZE", fromValue: self.box.frame.size, toValue: self.newSize!)
+      self.drawCanvas1(self.box.bounds)
+    }
+    sizeAnimation.completionHandler = completedTask("Size")
+    
+    let angleAnimation = Animera().animationWithDuration(1) { event in
+      self.angle = event.tween(identifier: "One of the angles", fromValue: self.angle, toValue: newAngle)
+      self.drawCanvas1(self.box.bounds)
+      }.onCompletion() { didFinish in
+        let handler = completedTask("angle")
+        handler(isFinished: didFinish)
+    }
 
     
-//    AnimeraQueue(animations: [positionAnimation, colorAnimation,  sizeAnimation, angleAnimation]).resume()
+//    self.animator = AnimeraGroup(animations: [positionAnimation, colorAnimation,  sizeAnimation, angleAnimation], isQueued:true)
+//    self.animator.onCompletion() { isFinished in
+//      println(isFinished)
+//      self.toggleButtons(false)
+//      
+//    }
+    self.animator.resume()
     
   }
   
   
   @IBAction func tapTogglePauseOrResume(sender:UIBarButtonItem) {
-//    self.animator.isPaused = !self.animator.isPaused
-//    
-//    if(self.animator.isPaused) {
-//      sender.title = "Resume"
-//    }
-//    else {
-//      sender.title = "Pause"
-//    }
+    self.animator.isPaused = !self.animator.isPaused
+    
+    if(self.animator.isPaused) {
+      sender.title = "Resume"
+    }
+    else {
+      sender.title = "Pause"
+    }
   }
   
   @IBAction func tapCancel(sender:UIBarButtonItem?) {
-//    self.animator.cancel()
-//    self.toggleButtons(false)
+    self.animator.cancel()
   }
 
   @IBAction func tapCancelAndAbort(sender:UIBarButtonItem) {
-//    self.animator.resume()
-//    self.animator.cancelAndUndo()
+    self.animator.resume()
+    self.animator.cancelAndUndo()
   }
 
   
