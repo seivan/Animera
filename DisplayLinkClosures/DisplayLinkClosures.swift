@@ -24,7 +24,7 @@ public class AnimeraEvent {
     }
   }
   
-  private(set) var timingFunction:(Double) -> (Double) = { t in return t }
+  private(set) var timingFunction:(Double) -> (Double) =  { t in return t }
   private(set) var untimedProgress = 0.0
   private(set) var progress = 0.0
   private(set) var isReversing = false
@@ -150,17 +150,17 @@ public class AnimeraEvent {
   func stop(#isFinished:Bool) {
     self.displayLink.invalidate()
     if(self.displayLink.paused == false) { if let completion = self.completionHandler { completion(isFinished: isFinished) } }
-    self.completionHandler = nil
+    //self.completionHandler = nil
     self.displayLink.paused = true
   }
   
   func toggleOn(isOn:Bool) { self.displayLink.paused = isOn == false }
   
-  func cancelAndUndo() {
+  func undo() {
     self.stop(isFinished: false)
     self.activateLoop()
-    self.toggleOn(true)
     self.event.isReversing = self.event.isReversing == false
+    self.toggleOn(true)
   }
   
   func activateLoop() {
@@ -176,7 +176,7 @@ public protocol AnimeraActions {
   var isPaused:Bool { get set }
   var completionHandler:AnimeraCompletionHandler? { get }
   func cancel()
-  func cancelAndUndo()
+  func undo()
   func pause()
   func resume()
   func onCompletion(handler:AnimeraCompletionHandler) -> Self
@@ -185,7 +185,7 @@ public protocol AnimeraActions {
 
 public class Animera : AnimeraActions {
   
-  private var  wrapper:InternalAnimeraWrapper?
+  private var wrapper:InternalAnimeraWrapper?
   public var  completionHandler:AnimeraCompletionHandler?
   
   public var isPaused:Bool {
@@ -210,8 +210,8 @@ public class Animera : AnimeraActions {
   public func cancel() {
     self.wrapper?.stop(isFinished: false)
   }
-  public func cancelAndUndo() {
-    self.wrapper?.cancelAndUndo()
+  public func undo() {
+    self.wrapper?.undo()
   }
   
   public func pause() { self.wrapper?.toggleOn(false) }
@@ -240,12 +240,27 @@ public class Animera : AnimeraActions {
 
 public class AnimeraGroup : AnimeraActions {
   
-  private var isUndoing = false
-  
+  private var isUndoing:Bool = false {
+    didSet {
+      self.hasUndone = true
+    }
+  }
+  private var hasUndone = false
   private let signal:dispatch_group_t = dispatch_group_create()
-  private var groupedAnimations   = [Animera]()
+  private var waitingAnimations   = [Animera]()
   private var runningAnimations   = [Animera]()
   private var executedAnimations  = [Animera]()
+  private var stackedAnimations:[Animera] {
+    get {
+      if(self.isUndoing) { return self.executedAnimations }
+      else { return self.waitingAnimations }
+    }
+    set {
+      if(self.isUndoing) { self.executedAnimations = newValue }
+      else { self.waitingAnimations = newValue }
+      
+    }
+  }
 
   private let isQueued = false
 
@@ -253,6 +268,7 @@ public class AnimeraGroup : AnimeraActions {
   
   public var isPaused:Bool {
     get {
+      if(self.runningAnimations.isEmpty) { return true }
       let animation = self.runningAnimations[0]
       if(animation !== nil) { return animation.isPaused}
       else { return true }
@@ -273,7 +289,7 @@ public class AnimeraGroup : AnimeraActions {
   
   public convenience init(animations:[Animera], isQueued:Bool = false) {
     self.init(isQueued:isQueued)
-    self.groupedAnimations = animations
+    self.waitingAnimations = animations
   }
   
   
@@ -288,18 +304,21 @@ public class AnimeraGroup : AnimeraActions {
       animation.cancel()
     }
     self.callbackFinished(false)
-    self.groupedAnimations.removeAll(keepCapacity: false)
+    self.waitingAnimations.removeAll(keepCapacity: false)
 
     
     
   }
 
-  public func cancelAndUndo() {
+  public func undo() {
+    self.isUndoing = !self.isUndoing
     for animation in self.runningAnimations {
       animation.pause()
-      self.executedAnimations += animation
+      self.stackedAnimations += animation
     }
+    self.stackedAnimations = self.stackedAnimations.reverse()
     self.runningAnimations.removeAll(keepCapacity: true)
+    self.resume()
     
   }
   
@@ -313,37 +332,37 @@ public class AnimeraGroup : AnimeraActions {
   
   public func resume()  {
     if(self.isQueued) {
-      if self.groupedAnimations.isEmpty {
+      if self.self.stackedAnimations.isEmpty {
         self.callbackFinished(true)
         return
       }
-      else if self.runningAnimations.isEmpty == false { for animation in self.runningAnimations  { animation.resume() } }
+      else if self.runningAnimations.isEmpty == false {
+        for animation in self.runningAnimations  { animation.resume() }
+      }
       else {
-        let animation = self.groupedAnimations[0]
+        let animation = self.stackedAnimations[0]
         self.runningAnimations = [animation]
-        self.groupedAnimations.removeAtIndex(0)
+        self.stackedAnimations.removeAtIndex(0)
         let optionalCompletionHandler = animation.completionHandler
         
         dispatch_group_enter(self.signal)
         animation.onCompletion() { isFinished in
           if let existingHandler = optionalCompletionHandler { existingHandler(isFinished: isFinished) }
-          self.executedAnimations += animation
+          if self.isUndoing { self.waitingAnimations += animation   }
+          else { self.executedAnimations += animation }
+          animation.completionHandler = optionalCompletionHandler
           dispatch_group_leave(self.signal)
         }
-        
+
         dispatch_group_notify(self.signal, dispatch_get_main_queue()) { [weak self] in
           if let weakSelf = self {
-//            for (idx, element) in enumerate(weakSelf.runningAnimations) {
-//              if element === animation {
-//                self?.runningAnimations.removeAtIndex(idx)
-//                break
-//              }
-//            }
             weakSelf.runningAnimations = [Animera]()
             weakSelf.resume()
           }
         }
-        if(self.isUndoing) { animation.cancelAndUndo() }
+        
+        if(self.isUndoing) { animation.undo() }
+        else if(self.hasUndone) { animation.undo() }
         else { animation.resume() }
         
         
