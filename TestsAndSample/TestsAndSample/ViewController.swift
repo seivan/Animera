@@ -487,6 +487,7 @@ class ViewController: UIViewController {
     self.toggleButtons(true)
     
     
+    println("-------------------")
     func completedTask(task:String) -> AnimeraCompletionHandler {
       return { didFinish in
         println("Task \(task) completion status is \(didFinish)")
@@ -543,6 +544,8 @@ class ViewController: UIViewController {
   }
 
   @IBAction func tapCancelAndAbort(sender:UIBarButtonItem) {
+    println("-------------------")
+
     self.animator?.undo()
   }
 

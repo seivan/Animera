@@ -345,21 +345,24 @@ public class AnimeraGroup : AnimeraActions {
         self.stackedAnimations.removeAtIndex(0)
         let optionalCompletionHandler = animation.completionHandler
         
-        dispatch_group_enter(self.signal)
+//        dispatch_group_enter(self.signal)
         animation.onCompletion() { isFinished in
           if let existingHandler = optionalCompletionHandler { existingHandler(isFinished: isFinished) }
           if self.isUndoing { self.waitingAnimations += animation   }
           else { self.executedAnimations += animation }
           animation.completionHandler = optionalCompletionHandler
-          dispatch_group_leave(self.signal)
+          self.runningAnimations = [Animera]()
+          self.resume()
+
+//          dispatch_group_leave(self.signal)
         }
 
-        dispatch_group_notify(self.signal, dispatch_get_main_queue()) { [weak self] in
-          if let weakSelf = self {
-            weakSelf.runningAnimations = [Animera]()
-            weakSelf.resume()
-          }
-        }
+//        dispatch_group_notify(self.signal, dispatch_get_main_queue()) { [weak self] in
+//          if let weakSelf = self {
+//            weakSelf.runningAnimations = [Animera]()
+//            weakSelf.resume()
+//          }
+//        }
         
         if(self.isUndoing) { animation.undo() }
         else if(self.hasUndone) { animation.undo() }
