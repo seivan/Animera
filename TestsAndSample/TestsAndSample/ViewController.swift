@@ -495,10 +495,11 @@ class ViewController: UIViewController {
     }
     
     
-    let positionAnimation = Animera().animationWithDuration(0.5) { event in
+    let positionAnimation = Animera().animationWithDuration(3) { event in
       self.box.center = event.tween(identifier: "ze center", fromValue: self.box.center, toValue: self.newCenter)
       }.onCompletion(completedTask("center"))
 
+    
     
     let colorAnimation = Animera().onCompletion(completedTask("Color")).animationWithDuration(0.5) { event in
         self.box.backgroundColor = event.tween(identifier: "hehe color", fromValue: self.box.backgroundColor, toValue: newRandomColor)
@@ -523,7 +524,7 @@ class ViewController: UIViewController {
       
     }
     
-//    self.animator = positionAnimation
+    self.animator = positionAnimation
     self.animator?.resume()
     
 
@@ -539,12 +540,13 @@ class ViewController: UIViewController {
   }
   
   @IBAction func tapCancel(sender:UIBarButtonItem?) {
+    println("CANCEL")
     self.animator?.cancel()
     self.toggleButtons(false)
   }
 
   @IBAction func tapCancelAndAbort(sender:UIBarButtonItem) {
-    println("-------------------")
+    println("UNDO")
 
     self.animator?.undo()
   }

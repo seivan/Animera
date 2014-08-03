@@ -132,6 +132,10 @@ public class AnimeraEvent {
   var completionHandler:AnimeraCompletionHandler?
   var shouldAnimate:Bool { return self.event.untimedProgress <= 1.0 && self.event.untimedProgress >= 0.0 }
   lazy var displayLink:CADisplayLink = CADisplayLink(target: self, selector: "update:")
+  var isAnimationComplete:Bool {
+    if(self.event.isReversing){ return  self.event.untimedProgress <= 0 }
+    else { return  self.event.untimedProgress >= 1 }
+  }
   
   
   init(duration:NSTimeInterval, handler:AnimeraHandler, completionHandler:AnimeraCompletionHandler?) {
@@ -144,20 +148,19 @@ public class AnimeraEvent {
   @objc func update(displayLink:CADisplayLink) {
     self.event.tick = displayLink.duration
     if self.shouldAnimate == true { self.animationHandler(event: self.event) }
-    else { self.stop(isFinished: true) }
+    else { self.stop() }
   }
   
-  func stop(#isFinished:Bool) {
+  func stop() {
     self.displayLink.invalidate()
-    if(self.displayLink.paused == false) { if let completion = self.completionHandler { completion(isFinished: isFinished) } }
-    //self.completionHandler = nil
+    if let completion = self.completionHandler { completion(isFinished: self.isAnimationComplete) }
     self.displayLink.paused = true
   }
   
   func toggleOn(isOn:Bool) { self.displayLink.paused = isOn == false }
   
   func undo() {
-    self.stop(isFinished: false)
+    self.stop()
     self.activateLoop()
     self.event.isReversing = self.event.isReversing == false
     self.toggleOn(true)
@@ -203,12 +206,10 @@ public class Animera : AnimeraActions {
     }
   }
   
-  init(){
-    
-  }
+  init(){}
   
   public func cancel() {
-    self.wrapper?.stop(isFinished: false)
+    self.wrapper?.stop()
   }
   public func undo() {
     self.wrapper?.undo()
@@ -240,7 +241,7 @@ public class Animera : AnimeraActions {
 
 public class AnimeraGroup : AnimeraActions {
   
-  private var isUndoing:Bool = false {
+  private var isReversing:Bool = false {
     didSet {
       self.hasUndone = true
     }
@@ -252,11 +253,11 @@ public class AnimeraGroup : AnimeraActions {
   private var executedAnimations  = [Animera]()
   private var stackedAnimations:[Animera] {
     get {
-      if(self.isUndoing) { return self.executedAnimations }
+      if(self.isReversing) { return self.executedAnimations }
       else { return self.waitingAnimations }
     }
     set {
-      if(self.isUndoing) { self.executedAnimations = newValue }
+      if(self.isReversing) { self.executedAnimations = newValue }
       else { self.waitingAnimations = newValue }
       
     }
@@ -311,7 +312,7 @@ public class AnimeraGroup : AnimeraActions {
   }
 
   public func undo() {
-    self.isUndoing = !self.isUndoing
+    self.isReversing = !self.isReversing
     for animation in self.runningAnimations {
       animation.pause()
       self.stackedAnimations += animation
@@ -331,7 +332,6 @@ public class AnimeraGroup : AnimeraActions {
   }
   
   public func resume()  {
-    if(self.isQueued) {
       if self.self.stackedAnimations.isEmpty {
         self.callbackFinished(true)
         return
@@ -348,7 +348,7 @@ public class AnimeraGroup : AnimeraActions {
 //        dispatch_group_enter(self.signal)
         animation.onCompletion() { isFinished in
           if let existingHandler = optionalCompletionHandler { existingHandler(isFinished: isFinished) }
-          if self.isUndoing { self.waitingAnimations += animation   }
+          if self.isReversing { self.waitingAnimations += animation   }
           else { self.executedAnimations += animation }
           animation.completionHandler = optionalCompletionHandler
           self.runningAnimations = [Animera]()
@@ -364,20 +364,14 @@ public class AnimeraGroup : AnimeraActions {
 //          }
 //        }
         
-        if(self.isUndoing) { animation.undo() }
+        if(self.isReversing) { animation.undo() }
         else if(self.hasUndone) { animation.undo() }
         else { animation.resume() }
         
         
       }
       
-    }
-    else {
-      
-    }
-
     
-
     
   }
   
